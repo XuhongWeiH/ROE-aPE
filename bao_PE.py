@@ -52,7 +52,7 @@ def get_bao_PE(sltDate = '2019-03-24'):
 
     code_dic = {}
     for item in result.values:
-        code_dic[item[1]] = item[3]
+        code_dic[item[1]] = float(item[3])
     bs.logout()
     return code_dic
     # #### 结果集输出到csv文件 ####
