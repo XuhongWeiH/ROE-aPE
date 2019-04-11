@@ -1,8 +1,17 @@
 from bao_PE import get_bao_PE
-import pandas as pd 
+import pandas as pd
 from datetime import datetime, timedelta
 from tqdm import tqdm
 import json
+from baoK_line import askPrice as _askPrice
+
+def askPrice(code, date):
+    try:
+        price = _askPrice(code, date)
+        return price #0.5 * (price[3] + price[4])
+    except ValueError:
+        price = askPrice(code, daysAgo(date,1))
+        return price
 
 def daysAgo(inDate, days):
     oneyearago = datetime.strptime(inDate, '%Y-%m-%d') - timedelta(days=days)
@@ -15,14 +24,13 @@ def readROE(sltDate):
             code_dic = json.load(fp=f)
         pass
     except FileNotFoundError:
-        df=pd.read_csv('./data3/dupont_data_ROE_(2015, 2020).csv')
+        df_origin=pd.read_csv('./data2/dupont_data_ROE_(2015, 2020).csv')
         df = df[['code','pubDate','statDate','dupontROE']]\
             [(df["pubDate"] < sltDate) 
-            & (daysAgo(sltDate, 455) < df["pubDate"])
             & (df["dupontROE"] > -1e6)
             ]
 
-        df = df.sort_values(by='pubDate',ascending = False )
+        # df = df.sort_values(by='pubDate',ascending = False )
         code_dic = {}
         count_dic = {}
         for roe_item in tqdm(df.values):
@@ -37,7 +45,11 @@ def readROE(sltDate):
                 pass
         
         for k in count_dic.keys():
-            code_dic[k] = code_dic[k] / count_dic[k] * 100
+            if count_dic[k] >= 3:
+                code_dic[k] = code_dic[k] / count_dic[k] * 100
+            else:
+                code_dic[k] = -1e6
+
 
         with open('./data2/ROE_' + sltDate + '.json', 'w') as f:
             json.dump(code_dic, f)
@@ -66,16 +78,18 @@ def readPE(sltDate):
         pass
     return code_dic
 
-def select_code(roe_dic_now, roe_dic_1_ago, roe_dic_2_ago, pe_dic, a=-8.3):
+def select_code(roe_dic_now, roe_dic_1_ago, roe_dic_2_ago, pe_dic, a=-98.3):
     select_code_dic = {}
     for k in pe_dic.keys():
+        if 'ST' in k:
+            continue
         try:
-            # if k == 'sz.000516':
-            #     A = roe_dic_now[k]
-            #     b = roe_dic_1_ago[k]
-            #     c = roe_dic_2_ago[k]
-            #     d = pe_dic[k]
-            if roe_dic_now[k] >= 15 and roe_dic_1_ago[k] >= 13 and roe_dic_2_ago[k] >= 12 \
+            if k == 'sh.600585':
+                A = roe_dic_now[k]
+                b = roe_dic_1_ago[k]
+                c = roe_dic_2_ago[k]
+                d = pe_dic[k]
+            if roe_dic_now[k] >= 13 and roe_dic_1_ago[k] >= 10 and roe_dic_2_ago[k] >= 10 \
                 and pe_dic[k] > 5:
                 select_code_dic[k] = (roe_dic_now[k] + a*pe_dic[k],
                                         roe_dic_now[k],
@@ -97,4 +111,5 @@ if __name__ == '__main__':
     pe_dic = readPE(sltDate)
 
     select_code(roe_dic_now, roe_dic_1_ago, roe_dic_2_ago, pe_dic)
+    price = askPrice("sh.600230", "2019-04-08")
     print(1)

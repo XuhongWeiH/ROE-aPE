@@ -11,22 +11,22 @@ def computeROE(code, year, quarter):
     # 打印输出
     return result_profit
 
-def compute_total_ROE():
+def compute_total_ROE(yearSE):
     # 登陆系统
     lg = bs.login()
     # 显示登陆返回信息
-    print('login respond error_code:' + lg.error_code)
-    print('login respond error_msg:' + lg.error_msg)
+    # print('login respond error_code:' + lg.error_code)
+    # print('login respond error_msg:' + lg.error_msg)
     # 获取全部证券基本资料
     rs = bs.query_stock_basic ()
     # rs = bs.query_stock_basic(code_name="浦发银行") # 支持模糊查询
-    print('query_stock_basic respond error_code:' + rs.error_code)
-    print('query_stock_basic respond error_msg:' + rs.error_msg)
+    # print('query_stock_basic respond error_code:' + rs.error_code)
+    # print('query_stock_basic respond error_msg:' + rs.error_msg)
     result_profit = pd.DataFrame()
 
     jingduCount = 0
     startt = time.time()
-    yearSE = (2015, 2020)
+    
     while (rs.error_code == '0') & rs.next():
         # 获取一条记录，将记录合并在一起
         code = rs.get_row_data()[0]
@@ -35,7 +35,7 @@ def compute_total_ROE():
         lg = bs.login()
         print('\r',"进度:%.2f%% | Code:%s | End@:%s | year:%d~%d"                                                                % (100*jingduCount/len(rs.data), code, 
         time.asctime( time.localtime(newt+(newt - startt)/jingduCount*(len(rs.data) - jingduCount))),
-          yearSE[0], yearSE[1]),end='')
+          yearSE[0], yearSE[1]),end='   ')
 
         for year in range(yearSE[0], yearSE[1]):
             
@@ -44,12 +44,14 @@ def compute_total_ROE():
                 if df.empty:
                     continue
                 else:
+                    df['season']=season
+                    df['year']=year
                     if result_profit.empty:
                         result_profit = df
                     else:
                         result_profit = result_profit.append(df)
     # 原始数据存储
-    result_profit.to_csv("./data3/dupont_data_ROE_"+str(yearSE)+".csv",encoding="utf-8", index=False)
+    result_profit.to_csv("./data2/ROE_"+str(yearSE)+".csv",encoding="utf-8", index=False)
     # 筛选有用数据
     # result = result_profit[['code', 'dupontROE']]
     # result = result[result['dupontROE'] != '']
@@ -64,4 +66,4 @@ def compute_total_ROE():
     bs.logout()
 
 if __name__ == '__main__':
-     compute_total_ROE()
+     compute_total_ROE(yearSE = [2006, 2020])
