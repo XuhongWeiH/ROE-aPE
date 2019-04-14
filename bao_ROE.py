@@ -51,7 +51,7 @@ def compute_total_ROE(yearSE):
                     else:
                         result_profit = result_profit.append(df)
     # 原始数据存储
-    result_profit.to_csv("./data2/ROE_"+str(yearSE)+".csv",encoding="utf-8", index=False)
+    result_profit.to_csv("./data/ROE_"+str(yearSE)+".csv",encoding="utf-8", index=False)
     # 筛选有用数据
     # result = result_profit[['code', 'dupontROE']]
     # result = result[result['dupontROE'] != '']
