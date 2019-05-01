@@ -8,13 +8,17 @@ import csv
 
 para1 = 0.5
 para2 = 0.3
-para3 = -8.3
+para3 = -3.3
 
 roe_lim_1 = 14
 roe_lim_2 = 14
 
-market_in_thread = -50
-market_out_thread = -60
+market_in_thread = -20
+market_out_thread = -32
+
+hangye_max = 1
+pe_min_limt = 5
+
 def askPrice(code, date):
     try:
         price = _askPrice(code, date)
@@ -26,6 +30,11 @@ def askPrice(code, date):
         price[3] = float(price[3])
         price[4] = float(price[4])
         return price
+
+def askCodePrice(code, date):
+    price = askPrice(code, date)
+    priceValue = (price[3] + price[4])/2
+    return priceValue
 
 def daysAgo(inDate, days):
     oneyearago = datetime.strptime(inDate, '%Y-%m-%d') - timedelta(days=days)
@@ -140,68 +149,114 @@ def readPE(sltDate):
         pass
     return code_dic
 
-def select_code(roe_dic, pe_dic):
+def select_code(roe_dic, pe_dic, industry_dic):
     select_code_dic = {}
     for k in pe_dic.keys():
-        if 'ST' in k:
+        try:
+            if 'ST' in industry_dic[k][0]:
+                continue
+        except KeyError:
             continue
         try:
 
-            if pe_dic[k] > 5:
+            if pe_dic[k] >= pe_min_limt:
                 select_code_dic[k] = (roe_dic[k] + para3*pe_dic[k],
                                         roe_dic[k],
                                         pe_dic[k],
                                         )
 
-            pass
+            else:
+                select_code_dic[k] = (-10000,
+                                        roe_dic[k],
+                                        pe_dic[k],
+                                        )
         except KeyError:
             pass
     result = sorted(select_code_dic.items(), key=lambda e:e[1][0], reverse=True)
     return result, select_code_dic
 
-def exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic):
+def viewableLog(log_file = './data2/out.json'):
+    with open(log_file, 'r') as f:
+        trade_list = json.load(fp=f)
+
+    xianjing = 10
+    shizhi = 0
+    chicang_dic = {}
+    jiagebodong = {}
+    zhibiaobodong = {}
+    riqibodong = []
+
+    for item in trade_list:
+        if item[3] == "buy":
+            chicang_dic[item[0]] = 1/item[2]
+            jiagebodong[item[0]] = [item[2]]
+            zhibiaobodong[item[0]] = [item[4]]
+            riqibodong = [item[1]]
+        elif item[3] == "hold":
+            jiagebodong[item[0]] += [item[2]]
+            zhibiaobodong[item[0]] += [item[4]]
+            riqibodong += [item[1]]
+        elif item[3] == "sold":
+            xianjing += (chicang_dic[item[0]] * item[2] - 1)
+            chicang_dic.pop(item[0])
+
+    return xianjing
+
+def exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic, hangye_count):
 
     #设定写入模式
-    # out += [['code', 'date', 'price', 'direction','zhibiao']]
+    # 获取符合指标范围的股票
     market_quality = 0
     for r in result:
         if r[1][0] > market_in_thread:
             market_quality += 1
     result_small = result[:market_quality]
 
-    new_shizhi_chenben = {}
-    hangye_count = {}
+
     for r in result_small:
-        try:
-            if hangye_count[industry_dic[r[0]][1]] > 0:
-                continue
-            hangye_count[industry_dic[r[0]][1]] += 1
-            pass
-        except KeyError:
-            hangye_count[industry_dic[r[0]][1]] = 1
-            pass
-            
         if r[0] in shizhi_chenben.keys():
-            new_shizhi_chenben[r[0]] = shizhi_chenben[r[0]]
+            price = askCodePrice(r[0], sltDate)
+            out += [[r[0], sltDate, price, 'hold', r[1][0]]]
             continue
         else:
-            price = askPrice(r[0], sltDate)
-            price = (price[3] + price[4])/2
-            new_shizhi_chenben[r[0]] = (industry_dic[r[0]][0], price, r[1][0], industry_dic[r[0]][1])
+            try:
+                if hangye_count[industry_dic[r[0]][1]] > hangye_max:
+                    continue
+                hangye_count[industry_dic[r[0]][1]] += 1
+                pass
+            except KeyError:
+                hangye_count[industry_dic[r[0]][1]] = 1
+                pass
+            price = askCodePrice(r[0], sltDate)
+            shizhi_chenben[r[0]] = (industry_dic[r[0]][0], price, r[1][0], industry_dic[r[0]][1])
             out += [[r[0], sltDate, price, 'buy', r[1][0]]]
 
     sold_list = []
     for k in shizhi_chenben.keys():
-        if select_code_dic[k][0] < market_out_thread:
+        try:
+            if select_code_dic[k][0] < market_out_thread:
+                sold_list = sold_list + [k]
+                price = askCodePrice(k, sltDate)
+                out += [[k, sltDate, price, 'sold', select_code_dic[k][0] ]]
+        except KeyError:
             sold_list = sold_list + [k]
-            price = askPrice(k, sltDate)
-            price = (price[3] + price[4])/2
-            out += [[k, sltDate, price, 'sold', select_code_dic[k][0] ]]
+            price = askCodePrice(k, sltDate)
+            out += [[k, sltDate, price, 'sold',33366]]
+            pass
 
     for delt_item in sold_list:
-        new_shizhi_chenben.pop(delt_item)
+        shizhi_chenben.pop(delt_item)
+        hangye_count[industry_dic[delt_item][1]] -= 1
+        assert(hangye_count[industry_dic[delt_item][1]] > -1)
     
-    return new_shizhi_chenben
+    with open('./data2/out.json', 'w') as f:
+        json.dump(out, f)
+    
+        
+    return shizhi_chenben, out, hangye_count
+
+
+    
 
 def hangyeRead():
     df_industry=pd.read_csv('./data/stock_industry.csv')
@@ -215,17 +270,21 @@ def hangyeRead():
 
 if __name__ == '__main__':
     shizhi_chenben = {}
+    hangye_count = {}
     ziben = 100000
-    sltDate = '2016-05-13'
+    sltDate = '2017-05-13'
     industry_dic = hangyeRead()
-    #打开文件，追加a
     out = []
-    while sltDate < '2019-04-03':
-        sltDate = daysAgo(sltDate,-15)
+
+    while sltDate < '2019-02-01':
+        sltDate = daysAgo(sltDate,-3)
 
         roe_dic = readROE(sltDate)
         pe_dic = readPE(sltDate)
-        result, select_code_dic = select_code(roe_dic, pe_dic)
-        shizhi_chenben = exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic)
-    
+        result, select_code_dic = select_code(roe_dic, pe_dic, industry_dic)
+        shizhi_chenben, out, hangye_count = exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic, hangye_count)
+        for it in shizhi_chenben.items():
+            print(it)
+        print(hangye_count)
+    print("盈利:", sltDate, viewableLog())
     print(1)
