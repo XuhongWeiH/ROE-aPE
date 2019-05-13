@@ -1,5 +1,6 @@
 {
     "python.pythonPath": "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3",
     "python.linting.pylintEnabled": false,
-    "python.formatting.provider": "autopep8"
+    "python.formatting.provider": "autopep8",
+    "git.ignoreLimitWarning": true
 }

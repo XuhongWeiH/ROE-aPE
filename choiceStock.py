@@ -13,8 +13,8 @@ para3 = -3.3
 roe_lim_1 = 14
 roe_lim_2 = 14
 
-market_in_thread = -20
-market_out_thread = -32
+market_in_thread = -7
+market_out_thread = -12
 
 hangye_max = 1
 pe_min_limt = 5
@@ -68,7 +68,7 @@ def readROE(sltDate):
             ago2Year = [int(nowyear)-1, 4]
             ago3Year = [int(nowyear)-2, 4]       
 
-        df_origin=pd.read_csv('./data/ROE_[2006, 2020].csv')
+        df_origin=pd.read_csv('./data/ROE_[2015, 2020].csv')
         df = df_origin[['code','pubDate','statDate', 'dupontROE', 'season', 'year']]\
             [(df_origin["pubDate"] < sltDate)
             &(daysAgo(sltDate,4*365+90) < df_origin["pubDate"] ) 
@@ -151,16 +151,31 @@ def readPE(sltDate):
 
 def select_code(roe_dic, pe_dic, industry_dic):
     select_code_dic = {}
-    for k in pe_dic.keys():
+    for k in list(roe_dic.keys()) + list(pe_dic.keys()):
         try:
             if 'ST' in industry_dic[k][0]:
+                select_code_dic[k] = (-10000,
+                                        roe_dic[k],
+                                        pe_dic[k],
+                                        )
                 continue
         except KeyError:
+            select_code_dic[k] = (-10000,
+                                        0,
+                                        0,
+                                        )
             continue
         try:
 
             if pe_dic[k] >= pe_min_limt:
-                select_code_dic[k] = (roe_dic[k] + para3*pe_dic[k],
+                if roe_dic[k] + para3*pe_dic[k] > 50:
+                    select_code_dic[k] = (-10000,
+                                        roe_dic[k],
+                                        pe_dic[k],
+                                        )
+
+                else:
+                    select_code_dic[k] = (roe_dic[k] + para3*pe_dic[k],
                                         roe_dic[k],
                                         pe_dic[k],
                                         )
@@ -171,6 +186,10 @@ def select_code(roe_dic, pe_dic, industry_dic):
                                         pe_dic[k],
                                         )
         except KeyError:
+            select_code_dic[k] = (-10000,
+                                        0,
+                                        0,
+                                        )
             pass
     result = sorted(select_code_dic.items(), key=lambda e:e[1][0], reverse=True)
     return result, select_code_dic
@@ -188,6 +207,7 @@ def viewableLog(log_file = './data2/out.json'):
 
     for item in trade_list:
         if item[3] == "buy":
+            shizhi += 1
             chicang_dic[item[0]] = 1/item[2]
             jiagebodong[item[0]] = [item[2]]
             zhibiaobodong[item[0]] = [item[4]]
@@ -197,10 +217,11 @@ def viewableLog(log_file = './data2/out.json'):
             zhibiaobodong[item[0]] += [item[4]]
             riqibodong += [item[1]]
         elif item[3] == "sold":
+            shizhi -= 1
             xianjing += (chicang_dic[item[0]] * item[2] - 1)
             chicang_dic.pop(item[0])
 
-    return xianjing
+    return xianjing, shizhi
 
 def exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic, hangye_count):
 
@@ -241,7 +262,7 @@ def exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic
         except KeyError:
             sold_list = sold_list + [k]
             price = askCodePrice(k, sltDate)
-            out += [[k, sltDate, price, 'sold',33366]]
+            out += [[k, sltDate, price, 'sold', 33366]]
             pass
 
     for delt_item in sold_list:
@@ -250,8 +271,7 @@ def exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic
         assert(hangye_count[industry_dic[delt_item][1]] > -1)
     
     with open('./data2/out.json', 'w') as f:
-        json.dump(out, f)
-    
+        json.dump(out, f)    
         
     return shizhi_chenben, out, hangye_count
 
@@ -268,16 +288,17 @@ def hangyeRead():
     return industry_dic
 
 
+
 if __name__ == '__main__':
     shizhi_chenben = {}
     hangye_count = {}
     ziben = 100000
-    sltDate = '2017-05-13'
+    sltDate = '2019-05-13'
     industry_dic = hangyeRead()
     out = []
 
-    while sltDate < '2019-02-01':
-        sltDate = daysAgo(sltDate,-3)
+    while sltDate < '2019-05-15':
+        sltDate = daysAgo(sltDate,-1)
 
         roe_dic = readROE(sltDate)
         pe_dic = readPE(sltDate)
@@ -285,6 +306,9 @@ if __name__ == '__main__':
         shizhi_chenben, out, hangye_count = exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic, hangye_count)
         for it in shizhi_chenben.items():
             print(it)
-        print(hangye_count)
+        print(sltDate, ':', hangye_count)
+        print("盈利:", sltDate, viewableLog())
+    with open('./data2/out.json', 'w') as f:
+        json.dump(out, f)
     print("盈利:", sltDate, viewableLog())
     print(1)
