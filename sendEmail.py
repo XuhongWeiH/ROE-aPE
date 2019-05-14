@@ -5,31 +5,68 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 import time
 import json
-def email(dstEmail):
+import pandas as pd
+from datetime import datetime, timedelta
+def daysAgo(inDate, days):
+    oneyearago = datetime.strptime(inDate, '%Y-%m-%d') - timedelta(days=days)
+    oneyearago = oneyearago.strftime('%Y-%m-%d')
+    return oneyearago
+
+def hangyeRead():
+    df_industry=pd.read_csv('./data/stock_industry.csv')
+    df_industry = df_industry[['code','code_name','industry']]
+    industry_dic = {}
+    for item in df_industry.values:
+        industry_dic[item[0]] = item[1:3]
+
+    return industry_dic
+
+def getSTR():
     with open('./data2/out.json', 'r') as f:
         trade_list = json.load(fp=f)
 
+    localtime = time.strftime("%Y-%m-%d", time.localtime())
+    industry_dic = hangyeRead()
     send = []
-    outStr = "代码 , 操作日期 , 收盘价格 , 买卖方向 , 指标（越大越好）\n"
+    outStr = "代码 , 操作日期 , 收盘价格 , 买卖方向 , 指标（越大越好), 股票名字, 所属板块\n"
     for item in trade_list:
-        outStr += str(item)
-        outStr += '\n' 
+        if daysAgo(localtime, -1) == item[1]:
+            item += [industry_dic[item[0]][0], industry_dic[item[0]][1]]
+            outStr += str(item)
+            outStr += '\n' 
+    outStr += "注意事项：\n \
+                1.上午最佳卖出是早上开盘一冲高和11：00左右 (大盘高开10点前卖，低开等反弹在卖)。\n\
+                2.上午最佳买入是大盘低开和10：00-10：30分左右。\n\
+                3.下午最佳买入是2：00-2：30大家注意观察。\n\
+                4.下午最佳卖出是13：10分-13：30分。\n\
+                一定把我的这个邮箱设置为联系人，否则会进入到垃圾箱\
+              "
+    return outStr
 
-    localtime = time.localtime(time.time())
-    date = '-'.join([str(localtime[0]),str(localtime[1]),str(localtime[2])])
+def email(dstEmail, outStr):
+    sender = '814123206@qq.com'
+    localtime = time.strftime("%Y-%m-%d", time.localtime())
     smtp = smtplib.SMTP() 
-    smtp.connect('smtp.163.com',25) 
-    smtp.login('13122192187', 'w123123') 
+    smtp.connect('smtp.qq.com',25) 
+    smtp.login(sender, 'cyntatcmjvojbbdj') 
 
     msg=MIMEText(outStr,'plain','utf-8')
-    msg['From']=formataddr(['xhwei','13122192187@163.com'])
+    msg['From']=formataddr(['魏旭鸿',sender])
     msg['To']=formataddr([dstEmail,dstEmail])
-    msg['Subject']=date + "明日股票买卖清单"
+    msg['Subject']=daysAgo(localtime, -1) + 'Asotck 操作'
 
-    smtp.sendmail('13122192187@163.com', dstEmail, msg.as_string()) 
+    smtp.sendmail(sender, dstEmail, msg.as_string()) 
     smtp.quit()
 
+
 if __name__ == "__main__":
-    email('814123206@qq.com')
-    email('719253612@qq.com')
-    # email('sunyixin610@126.com')
+    outStr = getSTR()
+    sendlist = ['big_weixuhong@qq.com','719253612@qq.com','sunyixin610@126.com','364141009@qq.com','whitekreuz@163.com',\
+                'zzhisheng@outlook.com']
+    for item in sendlist:
+        email(item, outStr)
+    # try:
+        
+    # except as e :
+        # print(e)
+        # print('send failed', item)
