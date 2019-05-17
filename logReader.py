@@ -40,37 +40,53 @@ def viewableLog(log_file = './data2/out.json'):
             jiagebodong[item[0]] += [item[2]]
             zhibiaobodong[item[0]] += [item[4]]
             riqibodong[item[0]] += [item[1]]
-        elif item[3] == "sold":
-            xianjing += (chicang_dic[item[0]] * item[2] - 1)
-            chicang_dic.pop(item[0])
+        # elif item[3] == "sold":
+        #     xianjing += (chicang_dic[item[0]] * item[2] - 1)
+        #     chicang_dic.pop(item[0])
             
 
                                 #支持中文
     mpl.rcParams['font.sans-serif'] = ['SimHei']
 
-   
-    for k in zhibiaobodong.keys():  
+    jidu = [1.0, 1.0]
+    limit = [-11,-3]
+    for k in zhibiaobodong.keys(): 
+        if zhibiaobodong[k][0] > 4.5:
+            jidu[0] = 2
+        else:
+            jidu[0] = 1
         names = riqibodong[k]
         x = range(len(names))
         y = jiagebodong[k]
         y1= zhibiaobodong[k]
-        y_buy = [-3 for b in range(len(names))]
-        y_sold = [-7 for b in range(len(names))]
+        # if k == 'sh.600309':
+        #     zhibiaobodong[k][0]=0
+        y_buy = [limit[0] for b in range(len(names))]
+        y_sold = [zhibiaobodong[k][0]-3.5*jidu[0] for b in range(len(names))]
+        
+        y_so2 = [zhibiaobodong[k][0]- jidu[0] for b in range(len(names))]
+        y_so3 = [zhibiaobodong[k][0]+ jidu[0] for b in range(len(names))]
+        y_so4 = [zhibiaobodong[k][0]for b in range(len(names))]
+        y_so3_5 = [zhibiaobodong[k][0]+2*jidu[0] for b in range(len(names))]
         #plt.plot(x, y, 'ro-')
         #plt.plot(x, y1, 'bo-')
         #pl.xlim(-1, 11)  # 限定横轴的范围
-        #pl.ylim(-1, 110)  # 限定纵轴的范围
-        plt.plot(x, y, label=u'price')
-        plt.plot(x, y1, label=u'zhibiao')
-        plt.plot(x, y_buy, marker='.',label=u'buy')
-        plt.plot(x, y_sold, marker='*', label=u'sold')
+        plt.ylim(-20, 40)  # 限定纵轴的范围
+        plt.scatter(x, y, marker='.',label=u'price')
+        plt.scatter(x, y1, marker='.', label=u'zhibiao')
+        plt.plot(x, y_buy, marker='_',label=u'buy')
+        plt.plot(x, y_sold, marker='_', label=u'0/4')
+        plt.plot(x, y_so2, marker='_', label=u'1/4')
+        plt.plot(x, y_so3, marker='_', label=u'3/4')
+        plt.plot(x, y_so4, marker='_', label=u'2/4')
+        plt.plot(x, y_so3_5, marker='_', label=u'4/4')
         plt.legend()  # 让图例生效
         # plt.xticks(x, names, rotation=90)
         # plt.margins(0)
         plt.subplots_adjust(bottom=0.15)
         plt.xlabel(u"time(s)") #X轴标签
         plt.ylabel(k) #Y轴标签
-        plt.title(k) #标题
+        plt.title(k +' ' + riqibodong[k][0]) #标题
 
         plt.show()
 
@@ -78,5 +94,4 @@ def viewableLog(log_file = './data2/out.json'):
 
 
 if __name__ == "__main__":
-    # print("盈利:", viewableLog())
-    email("814123206@qq.com")
+    viewableLog(log_file = './data2/out.json')

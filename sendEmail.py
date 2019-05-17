@@ -28,9 +28,9 @@ def getSTR():
     localtime = time.strftime("%Y-%m-%d", time.localtime())
     industry_dic = hangyeRead()
     send = []
-    outStr = "代码 , 操作日期 , 收盘价格 , 买卖方向 , 指标（越大越好), 股票名字, 所属板块\n"
+    outStr = "代码 , 收盘日期 , 收盘价格 , 明日预测买卖方向 , 指标（越大越好), 股票名字, 所属板块\n"
     for item in trade_list:
-        if daysAgo(localtime, -1) == item[1]:
+        if daysAgo(localtime, 0) == item[1]:
             item += [industry_dic[item[0]][0], industry_dic[item[0]][1]]
             outStr += str(item)
             outStr += '\n' 
@@ -53,7 +53,7 @@ def email(dstEmail, outStr):
     msg=MIMEText(outStr,'plain','utf-8')
     msg['From']=formataddr(['魏旭鸿',sender])
     msg['To']=formataddr([dstEmail,dstEmail])
-    msg['Subject']=daysAgo(localtime, -1) + 'Asotck 操作'
+    msg['Subject']='在' + daysAgo(localtime, -1) + 'Asotck的操作'
 
     smtp.sendmail(sender, dstEmail, msg.as_string()) 
     smtp.quit()
@@ -63,8 +63,10 @@ if __name__ == "__main__":
     outStr = getSTR()
     sendlist = ['big_weixuhong@qq.com','719253612@qq.com','sunyixin610@126.com','364141009@qq.com','whitekreuz@163.com',\
                 'zzhisheng@outlook.com']
+    print(outStr)
     for item in sendlist:
         email(item, outStr)
+        print(item, '   go')
     # try:
         
     # except as e :

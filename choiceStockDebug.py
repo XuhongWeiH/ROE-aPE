@@ -13,7 +13,7 @@ para3 = -3.3
 roe_lim_1 = 14
 roe_lim_2 = 14
 
-market_in_thread = -7
+market_in_thread = -20
 market_out_thread = -12
 
 hangye_max = 1
@@ -156,7 +156,7 @@ def select_code(roe_dic, pe_dic, industry_dic):
     for k in list(roe_dic.keys()) + list(pe_dic.keys()):
         try:
             if 'ST' in industry_dic[k][0]:
-                select_code_dic[k] = (-10000,
+                select_code_dic[k] = (-20000,
                                         roe_dic[k],
                                         pe_dic[k],
                                         )
@@ -170,25 +170,18 @@ def select_code(roe_dic, pe_dic, industry_dic):
         try:
 
             if pe_dic[k] >= pe_min_limt:
-                if roe_dic[k] + para3*pe_dic[k] > 50:
-                    select_code_dic[k] = (-10000,
-                                        roe_dic[k],
-                                        pe_dic[k],
-                                        )
-
-                else:
-                    select_code_dic[k] = (roe_dic[k] + para3*pe_dic[k],
+                select_code_dic[k] = (roe_dic[k] + para3*pe_dic[k],
                                         roe_dic[k],
                                         pe_dic[k],
                                         )
 
             else:
-                select_code_dic[k] = (-10000,
+                select_code_dic[k] = (roe_dic[k] + para3*pe_dic[k],
                                         roe_dic[k],
                                         pe_dic[k],
                                         )
         except KeyError:
-            select_code_dic[k] = (-10000,
+            select_code_dic[k] = (-30000,
                                         0,
                                         0,
                                         )
@@ -235,12 +228,13 @@ def exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic
             market_quality += 1
     result_small = result[:market_quality]
 
-
+    
     for r in result_small:
-        if r[0] in shizhi_chenben.keys():
+        if r[0] in shizhi_chenben.keys() or r[1][0] > 20:
             continue
         else:
             try:
+                
                 if hangye_count[industry_dic[r[0]][1]] > hangye_max:
                     continue
                 hangye_count[industry_dic[r[0]][1]] += 1
@@ -252,29 +246,35 @@ def exchange(sltDate, result, shizhi_chenben, select_code_dic, out, industry_dic
             shizhi_chenben[r[0]] = (industry_dic[r[0]][0], price, r[1][0], industry_dic[r[0]][1])
             out += [[r[0], sltDate, price, 'buy', r[1][0]]]
 
-    sold_list = []
-    for k in shizhi_chenben.keys():
-        try:
-            if select_code_dic[k][0] < market_out_thread:
-                sold_list = sold_list + [k]
-                price = askCodePrice(k, sltDate)
-                out += [[k, sltDate, price, 'sold', select_code_dic[k][0] ]]
-        except KeyError:
-            sold_list = sold_list + [k]
-            price = askCodePrice(k, sltDate)
-            out += [[k, sltDate, price, 'sold', 33366]]
-            pass
+    # sold_list = []
+    # for k in shizhi_chenben.keys():
+    #     try:
+    #         if select_code_dic[k][0] < market_out_thread:
+    #             sold_list = sold_list + [k]
+    #             price = askCodePrice(k, sltDate)
+    #             out += [[k, sltDate, price, 'sold', select_code_dic[k][0] ]]
+    #     except KeyError:
+    #         sold_list = sold_list + [k]
+    #         price = askCodePrice(k, sltDate)
+    #         out += [[k, sltDate, price, 'sold', 33366]]
+    #         pass
 
-    for delt_item in sold_list:
-        shizhi_chenben.pop(delt_item)
-        hangye_count[industry_dic[delt_item][1]] -= 1
-        assert(hangye_count[industry_dic[delt_item][1]] > -1)
+    # for delt_item in sold_list:
+    #     shizhi_chenben.pop(delt_item)
+    #     hangye_count[industry_dic[delt_item][1]] -= 1
+    #     assert(hangye_count[industry_dic[delt_item][1]] > -1)
 
     for item in shizhi_chenben.keys():
-        price = askCodePrice(item, sltDate)
-        shizhi_chenben[item] = (industry_dic[item][0], price, select_code_dic[item][0], industry_dic[item][1])
-        price = askCodePrice(item, sltDate)
-        out += [[item, sltDate, price, 'hold', select_code_dic[item][0]]]
+        try:
+            price = askCodePrice(item, sltDate)
+            shizhi_chenben[item] = (industry_dic[item][0], price, select_code_dic[item][0], industry_dic[item][1])
+            price = askCodePrice(item, sltDate)
+            out += [[item, sltDate, price, 'hold', select_code_dic[item][0]]]
+        except KeyError:
+            price = askCodePrice(item, sltDate)
+            shizhi_chenben[item] = (industry_dic[item][0], price, -100, industry_dic[item][1])
+            price = askCodePrice(item, sltDate)
+            out += [[item, sltDate, price, 'hold', -100]]
     
     
     # with open('./data2/out.json', 'w') as f:
@@ -299,13 +299,13 @@ def hangyeRead():
 if __name__ == '__main__':
     shizhi_chenben = {}
     hangye_count = {}
-    ziben = 100000
-    sltDate = '2019-05-13'
+    hangye_count['房地产'] = hangye_max+1
+    sltDate = '2017-05-04'
     industry_dic = hangyeRead()
     out = []
 
     
-    while sltDate < '2019-05-17':#今日日期，预测明日
+    while sltDate < '2017-08-30':#今日日期，预测明日
         sltDate = daysAgo(sltDate,-1)
 
         roe_dic = readROE(sltDate)
