@@ -49,12 +49,12 @@ def viewableLog(log_file = './data2/out.json'):
     mpl.rcParams['font.sans-serif'] = ['SimHei']
 
     jidu = [1.0, 1.0]
-    limit = [-11,-3]
+    limit = [-6,-3]
     for k in zhibiaobodong.keys(): 
-        if zhibiaobodong[k][0] > 4.5:
-            jidu[0] = 2
+        if zhibiaobodong[k][0] > 2.5:
+            jidu[0] = 2.0
         else:
-            jidu[0] = 1
+            jidu[0] = 1.0
         names = riqibodong[k]
         x = range(len(names))
         y = jiagebodong[k]
@@ -62,12 +62,16 @@ def viewableLog(log_file = './data2/out.json'):
         # if k == 'sh.600309':
         #     zhibiaobodong[k][0]=0
         y_buy = [limit[0] for b in range(len(names))]
-        y_sold = [zhibiaobodong[k][0]-3.5*jidu[0] for b in range(len(names))]
+        y_sold = [zhibiaobodong[k][0]-3.0*jidu[0] for b in range(len(names))]
         
         y_so2 = [zhibiaobodong[k][0]- jidu[0] for b in range(len(names))]
         y_so3 = [zhibiaobodong[k][0]+ jidu[0] for b in range(len(names))]
         y_so4 = [zhibiaobodong[k][0]for b in range(len(names))]
         y_so3_5 = [zhibiaobodong[k][0]+2*jidu[0] for b in range(len(names))]
+        y_so51 = [zhibiaobodong[k][0]+4*jidu[0] for b in range(len(names))]
+        y_so52 = [zhibiaobodong[k][0]+6*jidu[0] for b in range(len(names))]
+        y_so53 = [zhibiaobodong[k][0]+9*jidu[0] for b in range(len(names))]
+        y_so54 = [zhibiaobodong[k][0]+11*jidu[0] for b in range(len(names))]
         #plt.plot(x, y, 'ro-')
         #plt.plot(x, y1, 'bo-')
         #pl.xlim(-1, 11)  # 限定横轴的范围
@@ -80,6 +84,10 @@ def viewableLog(log_file = './data2/out.json'):
         plt.plot(x, y_so3, marker='_', label=u'3/4')
         plt.plot(x, y_so4, marker='_', label=u'2/4')
         plt.plot(x, y_so3_5, marker='_', label=u'4/4')
+        plt.plot(x, y_so51, marker='_', label=u'5/4')
+        plt.plot(x, y_so52, marker='_', label=u'6/4')
+        plt.plot(x, y_so53, marker='_', label=u'7/4')
+        plt.plot(x, y_so54, marker='_', label=u'8/4')
         plt.legend()  # 让图例生效
         # plt.xticks(x, names, rotation=90)
         # plt.margins(0)
