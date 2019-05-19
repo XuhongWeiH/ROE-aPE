@@ -6,17 +6,22 @@ import json
 from baoK_line import askPrice as _askPrice
 import csv
 import logging
-
+import numpy as np
+import math
+from bao_tradeDay import isTradeDay
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
- 
-logging.basicConfig(filename='trade.log', level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
- 
-# logging.debug("This is a debug log.")
-# logging.info("This is a info log.")
-# logging.warning("This is a warning log.")
-# logging.error("This is a error log.")
-# logging.critical("This is a critical log."
+logging.basicConfig(filename='./data4/trade.log', level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+
+def hangyeRead():
+    df_industry=pd.read_csv('./data/stock_industry.csv')
+    df_industry = df_industry[['code','code_name','industry']]
+    industry_dic = {}
+    for item in df_industry.values:
+        industry_dic[item[0]] = item[1:3]
+
+    return industry_dic
+industry_dic = hangyeRead()
 
 para1 = 0.5
 para2 = 0.3
@@ -27,9 +32,14 @@ roe_lim_2 = 14
 
 market_in_thread = -6.5
 
-zongzihan = 100000
+keyongzhijing = 100000
+shizhizichan = 0
+zongzihan = shizhizichan + keyongzhijing
 zijingzonge = zongzihan * 0.6
 geguzijingjishu = zongzihan * 0.1
+
+cangwei_feature_step = 1.1
+cangwei_real_step = 0.25
 
 hangye_max = 1
 
@@ -218,7 +228,7 @@ def dic2list(select_code_dic):
 
     return list_keys, list_values
 
-def select_code(roe_dic, pe_dic, industry_dic):
+def select_code(roe_dic, pe_dic):
     select_code_dic = {}
     for k in list(roe_dic.keys()) + list(pe_dic.keys()):
         try:
@@ -254,10 +264,40 @@ def select_code(roe_dic, pe_dic, industry_dic):
     result = sorted(select_code_dic_sub_sorted.items(), key=lambda e:e[1][0], reverse=True)
     return result, select_code_dic
 
-def exchange(sltDate, result, chicang, select_code_dic, industry_dic, hangye_count):
+def storeSaver(chicang,hangye):
+    with open('./data4/chicang.json', 'w') as f:
+        json.dump(chicang, f)
+    with open('./data4/hangye.json', 'w') as f:
+        json.dump(hangye, f)
+    
+def restoreReader():
+    chicang_dic = {}
+    hangye_count = {}
+    try:
+        with open('./data4/chicang.json', 'r') as f:
+            chicang_dic = json.load(fp=f)
+    except FileNotFoundError:
+        print('./data4/chicang.json is not exit')
+        return chicang_dic, hangye_count
+        pass
 
-    #设定写入模式
-    # 获取符合指标范围的股票
+    try:
+        with open('./data4/hangye.json', 'r') as f:
+            hangye_count = json.load(fp=f)
+    except FileNotFoundError:
+        print('./data4/hangye.json is not exit')
+        return chicang_dic, hangye_count
+        pass
+    
+    return chicang_dic, hangye_count
+
+def buyAnalyse(sltDate, result, select_code_dic):
+    global keyongzhijing
+    global shizhizichan
+    global zongzihan
+    global zijingzonge
+    global geguzijingjishu
+    chicang, hangye_count = restoreReader()
     market_quality = 0
     for r in result:
         if r[1][0] > market_in_thread:
@@ -265,7 +305,8 @@ def exchange(sltDate, result, chicang, select_code_dic, industry_dic, hangye_cou
     result_small = result[:market_quality]
 
     for r in result_small:
-        if r[0] in chicang.keys() or r[1][0] > 30:
+        if (r[0] in chicang.keys() and chicang[r[0]]['仓位状态'] > 0) or r[1][0] > 30 \
+        or industry_dic[r[0]][1] == '房地产' or industry_dic[r[0]][1] == '银行':
             continue
         else:
             try:
@@ -276,85 +317,158 @@ def exchange(sltDate, result, chicang, select_code_dic, industry_dic, hangye_cou
             except KeyError:
                 hangye_count[industry_dic[r[0]][1]] = 1
                 pass
+
             price = askCodePrice(r[0], sltDate)
-            chicang[r[0]] = (industry_dic[r[0]][0], price, r[1][0], 0.5*geguzijingjishu/price//100*100,industry_dic[r[0]][1])
-            logging.info(','.join(['操作日期', sltDate,
-                                   '买入股票', industry_dic[r[0]][0],
+            stock_buy = max(0.5*geguzijingjishu/price//100*100,200)
+            chicang[r[0]] = {
+                            '操作日期': sltDate,
+                            '股票名称': industry_dic[r[0]][0],
+                            '股票代码': r[0],
+                            '指标初始': r[1][0],
+                            '指标当前': r[1][0],
+                            '当前成本': price,
+                            '当前价格': price,
+                            '持仓数量': stock_buy,
+                            '单位操作': 100*math.ceil(stock_buy/200),
+                            '仓位状态': 0.5,
+                            '资金投入': stock_buy*price,
+                            '所属板块': industry_dic[r[0]][1]
+            }
+            shizhizichan += stock_buy*price
+            keyongzhijing -= stock_buy*price
+            zongzihan = shizhizichan + keyongzhijing
+            zijingzonge = zongzihan * 0.6
+            geguzijingjishu = zongzihan * 0.1
+
+            logging.debug(','.join(['操作内容', '建仓',
+                                   '操作日期', sltDate,
+                                   '股票名称', industry_dic[r[0]][0],
                                    '股票代码', r[0],
-                                   '指标数值', str(r[1][0]),
+                                   '指标初始', str(r[1][0]),
+                                   '指标当前', str(r[1][0]),
                                    '当前成本', str(price),
                                    '当前价格', str(price),
-                                   '持仓数量', str(0.5*geguzijingjishu/price//100*100),
+                                   '持仓数量', str(stock_buy),
+                                   '单位操作', str(100 * (math.ceil(stock_buy/200))),
                                    '仓位状态', str(0.5),
+                                   '资金投入', str(stock_buy*price),
                                    '所属板块', industry_dic[r[0]][1]]))
-    return chicang, hangye_count
+    storeSaver(chicang, hangye_count)
 
-    # sold_list = []
-    # for k in chicang.keys():
-    #     try:
-    #         if select_code_dic[k][0] < market_out_thread:
-    #             sold_list = sold_list + [k]
-    #             price = askCodePrice(k, sltDate)
-    #             out += [[k, sltDate, price, 'sold', select_code_dic[k][0] ]]
-    #     except KeyError:
-    #         sold_list = sold_list + [k]
-    #         price = askCodePrice(k, sltDate)
-    #         out += [[k, sltDate, price, 'sold', 33366]]
-    #         pass
-
-    # for delt_item in sold_list:
-    #     chicang.pop(delt_item)
-    #     hangye_count[industry_dic[delt_item][1]] -= 1
-    #     assert(hangye_count[industry_dic[delt_item][1]] > -1)
-
-    # for item in chicang.keys():
-    #     try:
-    #         price = askCodePrice(item, sltDate)
-    #         chicang[item] = (industry_dic[item][0], price, select_code_dic[item][0], industry_dic[item][1])
-    #         price = askCodePrice(item, sltDate)
-    #         out += [[item, sltDate, price, 'hold', select_code_dic[item][0]]]
-    #     except KeyError:
-    #         price = askCodePrice(item, sltDate)
-    #         chicang[item] = (industry_dic[item][0], price, -100, industry_dic[item][1])
-    #         price = askCodePrice(item, sltDate)
-    #         out += [[item, sltDate, price, 'hold', -100]]
+    # chicang.pop(delt_item)
     
-    
-    # with open('./data2/out.json', 'w') as f:
-    #     json.dump(out, f)    
+def holdAnalyse(sltDate, select_code_dic):
+    global keyongzhijing
+    global shizhizichan
+    global zongzihan
+    global zijingzonge
+    global geguzijingjishu
+    chicang, hangye_count = restoreReader()
+    for item in chicang.keys():
+        try:
+            new_feature = select_code_dic[item][0]
+        except KeyError:
+            print(item, '没有 指标信息')
+            new_feature = -1000
+
+        chicang_tmp = chicang[item]
+        last_feature = chicang_tmp['指标当前']
+        origin_feature = chicang_tmp['指标初始']
+        dinamic_cangwei = chicang_tmp['仓位状态']
+
+        last_cangwei_tmp = abs(last_feature - origin_feature) // cangwei_feature_step * np.sign(last_feature - origin_feature)
+        new_cangwei_tmp = abs(new_feature - origin_feature) // cangwei_feature_step * np.sign(last_feature - origin_feature)
+
+        cangwei_det = (new_cangwei_tmp - last_cangwei_tmp) * cangwei_real_step
+        dinamic_cangwei = max(dinamic_cangwei + cangwei_det, 0)
+
+        price_new = askCodePrice(item, sltDate)
+
+        if dinamic_cangwei == 0:
+            caozuoneirong = '清仓'
+            hangye_count[industry_dic[item][1]] -= 1
+            stock_buy_sell = -1*chicang_tmp['持仓数量']
+            shizhizichan += price_new * stock_buy_sell
+            keyongzhijing -= price_new * stock_buy_sell
+            zongzihan = shizhizichan + keyongzhijing
+            zijingzonge = zongzihan * 0.6
+            geguzijingjishu = zongzihan * 0.1
+        else:
+            stock_buy_sell = chicang_tmp['单位操作'] * (dinamic_cangwei - chicang_tmp['仓位状态'])/0.25
+            if cangwei_det > 0:
+                caozuoneirong = '加仓'
+                shizhizichan += price_new * stock_buy_sell
+                keyongzhijing -= price_new * stock_buy_sell
+                zongzihan = shizhizichan + keyongzhijing
+                zijingzonge = zongzihan * 0.6
+                geguzijingjishu = zongzihan * 0.1
+            elif cangwei_det == 0:
+                caozuoneirong = '持仓'
+                zongzihan = shizhizichan + keyongzhijing
+                zijingzonge = zongzihan * 0.6
+                geguzijingjishu = zongzihan * 0.1
+            elif cangwei_det < 0:
+                caozuoneirong = '减仓'
+                shizhizichan += price_new * stock_buy_sell
+                keyongzhijing -= price_new * stock_buy_sell
+                zongzihan = shizhizichan + keyongzhijing
+                zijingzonge = zongzihan * 0.6
+                geguzijingjishu = zongzihan * 0.1
+
+        chicang[item] = {'操作日期': sltDate,
+                        '股票名称': industry_dic[item][0],
+                        '股票代码': item,
+                        '指标初始': chicang_tmp['指标初始'],
+                        '指标当前': new_feature,
+                        '当前成本': (chicang_tmp['资金投入'] + stock_buy_sell*price_new) / \
+                                    (chicang_tmp['持仓数量'] + stock_buy_sell + 1),
+                        '当前价格': price_new,
+                        '持仓数量': chicang_tmp['持仓数量'] + stock_buy_sell,
+                        '单位操作': chicang_tmp['单位操作'],
+                        '仓位状态': dinamic_cangwei,
+                        '资金投入': chicang_tmp['资金投入'] + stock_buy_sell*price_new,
+                        '所属板块': industry_dic[item][1]
+            }
+
+        logging.info(','.join(['操作内容', caozuoneirong,
+                                '操作日期', sltDate,
+                                '股票名称', industry_dic[item][0],
+                                '股票代码', item,
+                                '指标初始', str(chicang_tmp['指标初始']),
+                                '指标当前', str(last_feature),#5
+                                '当前成本', str(chicang_tmp['当前成本']),#4
+                                '当前价格', str(chicang_tmp['当前价格']),
+                                '持仓数量', str(chicang_tmp['持仓数量']),#1
+                                '仓位状态', str(chicang_tmp['仓位状态']),#2
+                                '资金投入', str(chicang_tmp['资金投入']),#3
+                                '单位操作', str(chicang_tmp['单位操作']),
+                                '持仓变至', str(chicang_tmp['持仓数量'] + stock_buy_sell),#1
+                                '仓位变至', str(dinamic_cangwei),#2
+                                '资金变至', str(chicang_tmp['资金投入'] + stock_buy_sell*price_new),#3
+                                '成本变至', str((chicang_tmp['资金投入'] + stock_buy_sell*price_new) / \
+                                    (chicang_tmp['持仓数量'] + stock_buy_sell - 0.1)),#4
+                                '指标变至', str(new_feature),
+                                '所属板块', industry_dic[item][1]]))
         
-    # return chicang, hangye_count
-
-
+    storeSaver(chicang, hangye_count)
     
 
-def hangyeRead():
-    df_industry=pd.read_csv('./data/stock_industry.csv')
-    df_industry = df_industry[['code','code_name','industry']]
-    industry_dic = {}
-    for item in df_industry.values:
-        industry_dic[item[0]] = item[1:3]
 
-    return industry_dic
 
 
 
 if __name__ == '__main__':
-    chicang = {}
-    hangye_count = {}
-    hangye_count['房地产'] = hangye_max+1
-    hangye_count['银行'] = hangye_max+1
+
     sltDate = '2016-05-01'
-    industry_dic = hangyeRead()
     
     while sltDate < '2019-04-30':#今日日期，预测明日
-        sltDate = daysAgo(sltDate,-2)
-
+        sltDate = daysAgo(sltDate,-1)
+        if not isTradeDay(sltDate):
+            continue
         roe_dic = readROE(sltDate)
         pe_dic = readPE(sltDate)
-        result, select_code_dic = select_code(roe_dic, pe_dic, industry_dic)
-        chicang, hangye_count = exchange(sltDate, result, chicang, select_code_dic, industry_dic, hangye_count)
-        for it in chicang.items():
-            print(it)
-        print(sltDate, ':', hangye_count)
-    print(1)
+        result, select_code_dic = select_code(roe_dic, pe_dic)
+        buyAnalyse(sltDate, result, select_code_dic)
+        holdAnalyse(sltDate, select_code_dic)
+        # , chicang, hangye_count
+        
