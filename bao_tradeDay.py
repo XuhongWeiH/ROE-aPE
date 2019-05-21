@@ -12,5 +12,5 @@ def isTradeDay(sltDate):
     return bool(int(data_list[0][1]))
 
 if __name__ == "__main__":
-    print(isTradeDay('2019-05-18'))
+    print(isTradeDay('2018-09-03'))
 

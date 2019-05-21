@@ -90,7 +90,7 @@ def readROE(sltDate):
             ago2Year = [int(nowyear)-1, 4]
             ago3Year = [int(nowyear)-2, 4]       
 
-        df_origin=pd.read_csv('./data/ROE_[2006, 2020].csv')
+        df_origin=pd.read_csv('./data/ROE_[2015, 2020].csv')
         df = df_origin[['code','pubDate','statDate', 'dupontROE', 'season', 'year']]\
             [(df_origin["pubDate"] < sltDate)
             &(daysAgo(sltDate,4*365+90) < df_origin["pubDate"] ) 
@@ -448,9 +448,9 @@ def holdAnalyse(sltDate, select_code_dic):
 
 if __name__ == '__main__':
 
-    sltDate = '2018-08-31'
+    sltDate = '2019-05-13'
     
-    while sltDate < '2019-04-29':#今日日期，预测明日
+    while sltDate < '2019-05-21':#今日日期，预测明日
         sltDate = daysAgo(sltDate,-1)
         if not isTradeDay(sltDate):
             continue

@@ -8,7 +8,7 @@ def askPrice(code, date):
     rs = bs.query_history_k_data_plus(code,
         "date, code, open, high, low, close",
         start_date=date, end_date=date,
-        frequency="d", adjustflag="3")
+        frequency="d", adjustflag="2")
 
     #### 打印结果集 ####
     data_list = []
