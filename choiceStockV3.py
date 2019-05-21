@@ -373,7 +373,7 @@ def holdAnalyse(sltDate, select_code_dic):
         dinamic_cangwei = chicang_tmp['仓位状态']
 
         last_cangwei_tmp = abs(last_feature - origin_feature) // cangwei_feature_step * np.sign(last_feature - origin_feature)
-        new_cangwei_tmp = abs(new_feature - origin_feature) // cangwei_feature_step * np.sign(last_feature - origin_feature)
+        new_cangwei_tmp = abs(new_feature - origin_feature) // cangwei_feature_step * np.sign(new_feature - origin_feature)
 
         cangwei_det = (new_cangwei_tmp - last_cangwei_tmp) * cangwei_real_step
         dinamic_cangwei = max(dinamic_cangwei + cangwei_det, 0)
