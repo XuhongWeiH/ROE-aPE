@@ -23,23 +23,23 @@ def hangyeRead():
     return industry_dic
 industry_dic = hangyeRead()
 
-para1 = 0.5
-para2 = 0.3
+para1 = 0.8
+para2 = 0.6
 para3 = -3.3
 
-roe_lim_1 = 14
-roe_lim_2 = 14
+roe_lim_1 = 20
+roe_lim_2 = 20
 
-market_in_thread = -7#
+market_in_thread = 0#
 
 zongzichan = 100000
 zichantouru = 0
 geguzijingjishu = zongzichan * 0.1#
 
-cangwei_feature_step = 1.1#
+cangwei_feature_step = 1000000.1#
 cangwei_real_step = 0.25
 
-hangye_max = 1
+hangye_max = 10
 
 def askPrice(code, date):
     try:
@@ -144,8 +144,9 @@ def readROE(sltDate):
         pass
     
     new_code_dic = {}
+    chicang, hangye_count = restoreReader()
     for k in code_dic.keys():
-        if code_dic[k][1] > roe_lim_1 and code_dic[k][2] > roe_lim_2:
+        if code_dic[k][1] > roe_lim_1 and code_dic[k][2] > roe_lim_2 or k in chicang.keys():
             new_code_dic[k] = code_dic[k][0] + para1*code_dic[k][1] + para2*code_dic[k][2]
             new_code_dic[k] /=3
     return new_code_dic
@@ -228,6 +229,7 @@ def dic2list(select_code_dic):
 
 def select_code(roe_dic, pe_dic):
     select_code_dic = {}
+    
     for k in list(roe_dic.keys()) + list(pe_dic.keys()):
         try:
             if 'ST' in industry_dic[k][0]:
@@ -304,9 +306,11 @@ def buyAnalyse(sltDate, result, select_code_dic):
     result_small = result[:market_quality]
 
     for r in result_small:
-        if (r[0] in chicang.keys() and chicang[r[0]]['仓位状态'] > 0) or r[1][0] > 30 \
-             or len(chicang.keys()) >= 15 or zichantouru > zongzichan*0.8:
+        if (r[0] in chicang.keys() and chicang[r[0]]['仓位状态'] > 0):# or r[1][0] > 30 :
+            #  or len(chicang.keys()) >= 15 or zichantouru > zongzichan*0.8:
             continue
+        # if r[0] != 'sh.601166':
+        #     continue
         else:
             try:
                 if hangye_count[industry_dic[r[0]][1]] > hangye_max:
@@ -325,6 +329,8 @@ def buyAnalyse(sltDate, result, select_code_dic):
                             '股票代码': r[0],
                             '指标初始': r[1][0],
                             '今日指标': r[1][0],
+                            'ROE': r[1][1],
+                            'PE': r[1][2],
                             '当前成本': price,
                             '当前价格': price,
                             '持仓数量': stock_buy,
@@ -337,19 +343,19 @@ def buyAnalyse(sltDate, result, select_code_dic):
             for item in chicang.keys():
                 zichantouru += chicang[item]['持仓数量'] * chicang[item]['当前成本']
 
-            logging.debug(','.join(['明日操作', '建仓',
-                                   '操作日期', daysAgo(sltDate,-1),
-                                   '股票名称', industry_dic[r[0]][0],
-                                   '股票代码', r[0],
-                                   '指标初始', str(r[1][0]),
-                                   '今日指标', str(r[1][0]),
-                                   '当前成本', str(price),
-                                   '当前价格', str(price),
-                                   '持仓数量', str(stock_buy),
-                                   '单位操作', str(100 * (math.ceil(stock_buy/200))),
-                                   '仓位状态', str(0.5),
-                                   '资金投入', str(stock_buy*price),
-                                   '所属板块', industry_dic[r[0]][1]]))
+            # logging.debug(','.join(['明日操作', '建仓',
+            #                        '操作日期', daysAgo(sltDate,-1),
+            #                        '股票名称', industry_dic[r[0]][0],
+            #                        '股票代码', r[0],
+            #                        '指标初始', str(r[1][0]),
+            #                        '今日指标', str(r[1][0]),
+            #                        '当前成本', str(price),
+            #                        '当前价格', str(price),
+            #                        '持仓数量', str(stock_buy),
+            #                        '单位操作', str(100 * (math.ceil(stock_buy/200))),
+            #                        '仓位状态', str(0.5),
+            #                        '资金投入', str(stock_buy*price),
+            #                        '所属板块', industry_dic[r[0]][1]]))
     storeSaver(chicang, hangye_count)
 
     # chicang.pop(delt_item)
@@ -366,7 +372,7 @@ def holdAnalyse(sltDate, select_code_dic):
             new_feature = select_code_dic[item][0]
         except KeyError:
             print(item, '没有 指标信息')
-            new_feature = -1000
+            new_feature = -998
 
         chicang_tmp = chicang[item]
         last_feature = chicang_tmp['今日指标']
@@ -413,6 +419,8 @@ def holdAnalyse(sltDate, select_code_dic):
                         '股票代码': item,
                         '指标初始': chicang_tmp['指标初始'],
                         '今日指标': new_feature,
+                        'ROE': select_code_dic[item][1],
+                        'PE': select_code_dic[item][2],
                         '当前成本': dangqianchenben,
                         '当前价格': price_new,
                         '持仓数量': chicang_tmp['持仓数量'] + stock_buy_sell,
@@ -425,20 +433,22 @@ def holdAnalyse(sltDate, select_code_dic):
         logging.info(','.join(['明日操作', caozuoneirong,
                                 '操作日期', daysAgo(sltDate,-1),
                                 '股票名称', industry_dic[item][0],
-                                '股票代码', item,
-                                '指标初始', str(chicang_tmp['指标初始']),
-                                '昨日指标', sltDate + ',' + str(last_feature),#5
-                                '当前成本', str(chicang_tmp['当前成本']),#4
+                                # '股票代码', item,
+                                # '指标初始', str(chicang_tmp['指标初始']),
+                                # '昨日指标', str(last_feature),#5
+                                # '当前成本', str(chicang_tmp['当前成本']),#4
                                 '当前价格', str(chicang_tmp['当前价格']),
-                                '持仓数量', str(chicang_tmp['持仓数量']),#1
-                                '仓位状态', str(chicang_tmp['仓位状态']),#2
-                                '资金投入', str(chicang_tmp['资金投入']),#3
-                                '单位操作', str(chicang_tmp['单位操作']),
-                                '持仓变至', str(chicang_tmp['持仓数量'] + stock_buy_sell),#1
-                                '仓位变至', str(dinamic_cangwei),#2
-                                '资金变至', str(chicang_tmp['资金投入'] + stock_buy_sell*price_new),#3
-                                '成本变至', str(dangqianchenben),#4
+                                # '持仓数量', str(chicang_tmp['持仓数量']),#1
+                                # '仓位状态', str(chicang_tmp['仓位状态']),#2
+                                # '资金投入', str(chicang_tmp['资金投入']),#3
+                                # '单位操作', str(chicang_tmp['单位操作']),
+                                # '持仓变至', str(chicang_tmp['持仓数量'] + stock_buy_sell),#1
+                                # '仓位变至', str(dinamic_cangwei),#2
+                                # '资金变至', str(chicang_tmp['资金投入'] + stock_buy_sell*price_new),#3
+                                # '成本变至', str(dangqianchenben),#4
                                 '今日指标', str(new_feature),
+                                'ROE', str(select_code_dic[item][1]),
+                                'PE', str(select_code_dic[item][2]),
                                 '所属板块', industry_dic[item][1]]))
     
     for item in soldall_list:
@@ -450,7 +460,7 @@ def holdAnalyse(sltDate, select_code_dic):
     for item in chicang.keys():
         zichantouru += chicang[item]['持仓数量'] * chicang[item]['当前成本']
 
-    print("总资产,总市值,持股数,%.2f---%.2f---%d" %(zongzichan, zichantouru,len(chicang.keys())))
+    print("总资产,总市值,持股数,%s---%.2f---%.2f---%d" %(sltDate, zongzichan, zichantouru,len(chicang.keys())))
 
     storeSaver(chicang, hangye_count)
     
@@ -461,7 +471,7 @@ def holdAnalyse(sltDate, select_code_dic):
 
 if __name__ == '__main__':
 
-    sltDate = '2011-05-01'
+    sltDate = '2011-04-22'
     
     while sltDate < '2019-04-29':#今日日期，预测明日
         sltDate = daysAgo(sltDate,-1)
