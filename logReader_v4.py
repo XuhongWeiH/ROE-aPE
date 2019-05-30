@@ -15,15 +15,18 @@ def hangyeRead():
 
     return industry_dic
 
-def viewableLog(name, zhibiao):
-    df_industry=pd.read_csv('./data4/trade50.log')
-    df_sub1 = df_industry[['2011-04-26','万方发展','90.1344688111111','4.4325','综合']]
+def viewableLog(name, zhibiao, hangye):
+    df_industry=pd.read_csv('./data4/trade.log')
+    df_sub1 = df_industry[[\
+    '2011-04-26','股票具体名称','价格','指标','ROE','roe','PE','pe','板块'\
+    ]]
 
-    df_sub2 = df_sub1[(df_sub1["万方发展"] == name)]
-    df_sub2.to_csv("./data5/"  + str(zhibiao).split('.')[0]+ name +".csv",encoding="utf-8", index=False)
+    df_sub2 = df_sub1[(df_sub1["股票具体名称"] == name)]
+    df_sub2.to_csv("./data5/"  + str(zhibiao).split('.')[0]+ name + '_'+ hangye +".csv",encoding="utf-8", index=False)
 
 if __name__ == "__main__":
     chicang, hangye_count = restoreReader()
+    print(chicang)
     name_list = list(chicang.keys())
     for item in name_list:
-        viewableLog(industry_dic[item][0], (chicang[item]['当前成本'] - chicang[item]['当前价格'])*chicang[item]['持仓数量'])
+        viewableLog(industry_dic[item][0], (chicang[item]['当前成本'] - chicang[item]['当前价格'])*chicang[item]['持仓数量'], industry_dic[item][1])

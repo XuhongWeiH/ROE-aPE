@@ -12,7 +12,7 @@ from bao_tradeDay import isTradeDay
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
 logging.basicConfig(filename='./data4/trade.log', level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
-
+logging.info('持仓,操作日期,2011-04-26,股票名称,股票具体名称,当前价格,价格,今日指标,指标,ROE,roe,PE,pe,所属板块,板块')
 def hangyeRead():
     df_industry=pd.read_csv('./data/stock_industry.csv')
     df_industry = df_industry[['code','code_name','industry']]
@@ -23,6 +23,7 @@ def hangyeRead():
     return industry_dic
 industry_dic = hangyeRead()
 
+para0 = 1
 para1 = 0.8
 para2 = 0.6
 para3 = -3.3
@@ -36,10 +37,10 @@ zongzichan = 100000
 zichantouru = 0
 geguzijingjishu = zongzichan * 0.1#
 
-cangwei_feature_step = 1000000.1#
-cangwei_real_step = 0.25
+cangwei_feature_step = 10000000.1#
+cangwei_real_step = 0.0
 
-hangye_max = 10
+hangye_max = 100
 
 def askPrice(code, date):
     try:
@@ -147,7 +148,7 @@ def readROE(sltDate):
     chicang, hangye_count = restoreReader()
     for k in code_dic.keys():
         if code_dic[k][1] > roe_lim_1 and code_dic[k][2] > roe_lim_2 or k in chicang.keys():
-            new_code_dic[k] = code_dic[k][0] + para1*code_dic[k][1] + para2*code_dic[k][2]
+            new_code_dic[k] = para0*code_dic[k][0] + para1*code_dic[k][1] + para2*code_dic[k][2]
             new_code_dic[k] /=3
     return new_code_dic
 
@@ -306,7 +307,16 @@ def buyAnalyse(sltDate, result, select_code_dic):
     result_small = result[:market_quality]
 
     for r in result_small:
-        if (r[0] in chicang.keys() and chicang[r[0]]['仓位状态'] > 0):# or r[1][0] > 30 :
+        if (r[0] in chicang.keys() and chicang[r[0]]['仓位状态'] > 0) or \
+            industry_dic[r[0]][1] == '钢铁'or \
+            industry_dic[r[0]][1] == '化工'or \
+            industry_dic[r[0]][1] == '机械设备'or \
+            industry_dic[r[0]][1] == '传媒'or \
+            industry_dic[r[0]][1] == '公事业'or \
+            industry_dic[r[0]][1] == '汽车'or \
+            industry_dic[r[0]][1] == '综合'or \
+            industry_dic[r[0]][1] == '建筑装饰'or \
+            r[1][2] < 5:# or r[1][0] > 30 :
             #  or len(chicang.keys()) >= 15 or zichantouru > zongzichan*0.8:
             continue
         # if r[0] != 'sh.601166':
@@ -471,10 +481,10 @@ def holdAnalyse(sltDate, select_code_dic):
 
 if __name__ == '__main__':
 
-    sltDate = '2011-04-22'
+    sltDate = '2009-05-01'
     
     while sltDate < '2019-04-29':#今日日期，预测明日
-        sltDate = daysAgo(sltDate,-1)
+        sltDate = daysAgo(sltDate,-10)
         if not isTradeDay(sltDate):
             continue
         roe_dic = readROE(sltDate)
