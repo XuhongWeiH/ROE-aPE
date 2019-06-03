@@ -316,7 +316,9 @@ def buyAnalyse(sltDate, result, select_code_dic):
             industry_dic[r[0]][1] == '汽车'or \
             industry_dic[r[0]][1] == '综合'or \
             industry_dic[r[0]][1] == '建筑装饰'or \
-            r[1][2] < 5:# or r[1][0] > 30 :
+            industry_dic[r[0]][1] == '医药生物' or \
+            r[1][2] < 5 or \
+            r[1][2] > 11:# or r[1][0] > 30 :
             #  or len(chicang.keys()) >= 15 or zichantouru > zongzichan*0.8:
             continue
         # if r[0] != 'sh.601166':
@@ -397,16 +399,17 @@ def holdAnalyse(sltDate, select_code_dic):
         for item_in in chicang.keys():
             zichantouru += chicang[item_in]['持仓数量'] * chicang[item_in]['当前成本']
 
-        if cangwei_det > 0 and zichantouru >= zongzichan:
-            cangwei_det = 0
-            new_feature = last_feature
+        # if cangwei_det > 0 and zichantouru >= zongzichan:
+        #     cangwei_det = 0
+        #     new_feature = last_feature
 
         dinamic_cangwei = max(dinamic_cangwei + cangwei_det, 0)
 
         price_new = askCodePrice(item, daysAgo(sltDate,-1))
 
-        if dinamic_cangwei == 0:
+        if dinamic_cangwei == 0 or select_code_dic[item][0] == -1002 or select_code_dic[item][1] < 12:
             caozuoneirong = '清仓'
+            print('清仓', select_code_dic[item], industry_dic[item][0], industry_dic[item][1])
             soldall_list += [item]
             hangye_count[industry_dic[item][1]] -= 1
             stock_buy_sell = -1*chicang_tmp['持仓数量']
