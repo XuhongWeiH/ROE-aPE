@@ -69,7 +69,7 @@ def get_bao_PE_byCode(code, sltDateBegin, sltDateEnd):
     while (rs.error_code == '0') & rs.next():
         # 获取一条记录，将记录合并在一起
         lrs = rs.get_row_data()
-        if float(lrs[2]) > -100:
+        if lrs[2] != '' and float(lrs[2]) > -100:
             result_list.append(lrs)
             
     
