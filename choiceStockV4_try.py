@@ -316,7 +316,7 @@ def buyAnalyse(sltDate, result, select_code_dic):
             industry_dic[r[0]][1] == '汽车'or \
             industry_dic[r[0]][1] == '综合'or \
             industry_dic[r[0]][1] == '建筑装饰'or \
-            r[1][2] < 5 or \
+            r[1][2] < 4.5 or \
             r[1][2] > 11:# or r[1][0] > 30             # industry_dic[r[0]][1] == '医药生物' or \:
             #  or len(chicang.keys()) >= 15 or zichantouru > zongzichan*0.8:
             continue
@@ -485,7 +485,7 @@ if __name__ == '__main__':
 
     sltDate = '2019-05-28'
     
-    while sltDate < '2019-06-03':#今日日期，预测明日
+    while sltDate < '2019-06-05':#今日日期，预测明日
         sltDate = daysAgo(sltDate,-1)
         if not isTradeDay(sltDate):
             continue

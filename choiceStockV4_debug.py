@@ -484,21 +484,21 @@ def holdAnalyse(sltDate, select_code_dic):
 
 if __name__ == '__main__':
 
-    sltDate = '2009-05-01'
+    sltDate = '2007-03-12'
     
-    while sltDate < '2019-04-29':#今日日期，预测明日
-        sltDate = daysAgo(sltDate,-10)
+    while sltDate < '2009-05-29':#今日日期，预测明日
+        sltDate = daysAgo(sltDate,-1)
         if not isTradeDay(sltDate):
             continue
-        roe_dic = readROE(sltDate)
+        # roe_dic = readROE(sltDate)
         pe_dic = readPE(sltDate)
-        result, select_code_dic = select_code(roe_dic, pe_dic)
-        buyAnalyse(sltDate, result, select_code_dic)
-        holdAnalyse(sltDate, select_code_dic)
-        # , chicang, hangye_count
-    chicang, _ = restoreReader()
-    for item in chicang.keys():
-        print('强制平仓了', item,industry_dic[item][0], (chicang[item]['当前成本'] - chicang[item]['当前价格'])*chicang[item]['持仓数量'])
-        zongzichan -= (chicang[item]['当前成本'] - chicang[item]['当前价格'])*chicang[item]['持仓数量']
-        print(zongzichan)
+    #     result, select_code_dic = select_code(roe_dic, pe_dic)
+    #     buyAnalyse(sltDate, result, select_code_dic)
+    #     holdAnalyse(sltDate, select_code_dic)
+    #     # , chicang, hangye_count
+    # chicang, _ = restoreReader()
+    # for item in chicang.keys():
+    #     print('强制平仓了', item,industry_dic[item][0], (chicang[item]['当前成本'] - chicang[item]['当前价格'])*chicang[item]['持仓数量'])
+    #     zongzichan -= (chicang[item]['当前成本'] - chicang[item]['当前价格'])*chicang[item]['持仓数量']
+    #     print(zongzichan)
         

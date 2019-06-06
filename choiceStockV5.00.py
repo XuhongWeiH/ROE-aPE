@@ -184,13 +184,87 @@ def readG(sltDate):
             code_dic = json.load(fp=f)
         pass
     except FileNotFoundError:
-        sltDate_years_ago = daysAgo(sltDate, 365)
-        code_dic = GrowthRate(sltDate_years_ago, sltDate)
+        dateQujian = ['05-01','09-01','11-01']
+        nowyear = sltDate.split('-')[0]
+        nowmonth = '-'.join(sltDate.split('-')[1:])
 
-        with open('./data3/G_' + sltDate + '.json', 'w') as f:
+        if nowmonth < dateQujian[0]:
+            ago1Year = [int(nowyear)-1, 3]
+            ago2Year = [int(nowyear)-2, 4]
+            ago3Year = [int(nowyear)-3, 4]
+        elif nowmonth < dateQujian[1]:
+            ago1Year = [int(nowyear), 1]
+            ago2Year = [int(nowyear)-1, 4]
+            ago3Year = [int(nowyear)-2, 4]
+        elif nowmonth < dateQujian[2]:
+            ago1Year = [int(nowyear), 2]
+            ago2Year = [int(nowyear)-1, 4]
+            ago3Year = [int(nowyear)-2, 4]
+        else:
+            ago1Year = [int(nowyear), 3]
+            ago2Year = [int(nowyear)-1, 4]
+            ago3Year = [int(nowyear)-2, 4]       
+
+        df_origin=pd.read_csv('./data/ROE_[2015, 2020].csv')
+        df = df_origin[['code','pubDate','statDate', 'dupontROE', 'season', 'year']]\
+            [(df_origin["pubDate"] < sltDate)
+            &(daysAgo(sltDate,4*365+90) < df_origin["pubDate"] ) 
+            ]
+
+        df_ago1Year = df[(df['year']==ago1Year[0]) & (df['season']==ago1Year[1])]
+        df_ago2Year = df[(df['year']==ago2Year[0]) & (df['season']==ago2Year[1])]
+        df_ago3Year = df[(df['year']==ago3Year[0]) & (df['season']==ago3Year[1])]
+
+        
+        # df = df.sort_values(by='pubDate',ascending = False )
+        code_dic = {}
+        count_dic = {}
+        for roe_item in tqdm(df_ago1Year.values):
+            try:
+                count_dic[roe_item[0]] += 1
+                code_dic [roe_item[0]] += [roe_item[3]*100/roe_item[4]*4]
+
+            except KeyError as identifier:
+                count_dic[roe_item[0]] = 1
+                code_dic [roe_item[0]] = [roe_item[3]*100/roe_item[4]*4]
+                pass
+
+        for roe_item in tqdm(df_ago2Year.values):
+            try:
+                count_dic[roe_item[0]] += 1
+                code_dic [roe_item[0]] += [roe_item[3]*100/roe_item[4]*4]
+
+            except KeyError as identifier:
+                count_dic[roe_item[0]] = 1
+                code_dic [roe_item[0]] = [roe_item[3]*100/roe_item[4]*4]
+                pass
+
+        for roe_item in tqdm(df_ago3Year.values):
+            try:
+                count_dic[roe_item[0]] += 1
+                code_dic [roe_item[0]] += [roe_item[3]*100/roe_item[4]*4]
+
+            except KeyError as identifier:
+                count_dic[roe_item[0]] = 1
+                code_dic [roe_item[0]] = [roe_item[3]*100/roe_item[4]*4]
+                pass
+        
+        for k in count_dic.keys():
+            if count_dic[k] < 3:
+                code_dic.pop(k)
+
+        # debug
+        with open('./data3/ROE_' + sltDate + '.json', 'w') as f:
             json.dump(code_dic, f)
         pass
-    return code_dic
+    
+    new_code_dic = {}
+    chicang, hangye_count = restoreReader()
+    for k in code_dic.keys():
+        if code_dic[k][1] > roe_lim_1 and code_dic[k][2] > roe_lim_2 or k in chicang.keys():
+            new_code_dic[k] = para0*code_dic[k][0] + para1*code_dic[k][1] + para2*code_dic[k][2]
+            new_code_dic[k] /=3
+    return new_code_dic
 
 def partition(L_key, L_value, left, right):
     """
