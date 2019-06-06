@@ -71,10 +71,6 @@ def get_bao_PE_byCode(code, sltDateBegin, sltDateEnd):
         lrs = rs.get_row_data()
         if lrs[2] != '' and float(lrs[2]) > -100:
             result_list.append(lrs)
-            
-    
-    if len(result_list) == 0:
-        raise Exception('no PE data on it')
     
     result = pd.DataFrame(result_list, columns=rs.fields)
 

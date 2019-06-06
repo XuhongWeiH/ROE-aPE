@@ -3,6 +3,7 @@ import pandas as pd
 import time
 def computeROE(code, year, quarter):
  # 查询杜邦指数
+    lg = bs.login()
     dupont_list = []
     rs_dupont = bs.query_dupont_data(code, year, quarter)
     while (rs_dupont.error_code == '0') & rs_dupont.next():

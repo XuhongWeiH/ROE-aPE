@@ -18,7 +18,7 @@ industry_list = []
 while (rs.error_code == '0') & rs.next():
     # 获取一条记录，将记录合并在一起
     rs_code = rs.get_row_data()
-    if rs_code[3] != '':
+    if rs_code[3] != '' and rs_code[1] != 'sh.600074' and 'ST' not in rs_code[2]:
         industry_list.append(rs_code[1:])
 result = pd.DataFrame(industry_list, columns=rs.fields[1:])
 # 结果集输出到csv文件

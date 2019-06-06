@@ -485,7 +485,7 @@ if __name__ == '__main__':
 
     sltDate = '2019-05-28'
     
-    while sltDate < '2019-06-05':#今日日期，预测明日
+    while sltDate < '2019-06-06':#今日日期，预测明日
         sltDate = daysAgo(sltDate,-1)
         if not isTradeDay(sltDate):
             continue
