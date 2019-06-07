@@ -145,6 +145,8 @@ class oneStockDocument:
                 df = df[['code', 'dupontROE', 'season', 'year']]
                 if df.values[0][1] != '':
                     self.ROE['-'.join([str(ROE_newyear), str(ROE_newSea)])] = float(df.values[0][1])
+                else:
+                    self.ROE['-'.join([str(ROE_newyear), str(ROE_newSea)])] = 0
             #G
             self.G = self.document['G']
             while True:
