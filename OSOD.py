@@ -8,36 +8,42 @@ from tqdm import tqdm
 from bao_ROE import computeROE
 from bao_EPSGrowthRate import computeG
 import os
+from bao_profit import computeProfit
 
 
-class oneStockDocument:
+class oneStockDocument():
 
-    def __init__(self):
+    def __init__(self, industry_root):
 
-        self.industry_dic = self.hangye_list()
         self.code = ""
         self.name = ""
-        self.industury = ""
+        self.industry = ""
+        self.industry_root = industry_root
+        self.industry_dic = self.hangye_list()
 
         self.ROE = {}
         self.PE = {}
         self.G = {}
+        self.ProG = {}
         self.K_line = {}
+        self.shizhi = 0
 
         self.document = {"code": self.code,
                          "name": self.name,
-                         "industury": self.industury,
+                         "industry": self.industry,
                          "ROE": self.ROE,
                          "PE": self.PE,
                          "G": self.G,
+                         "ProG":self.ProG,
                          "K_line": self.K_line
                          }
 
         self.df_origin_ROE = pd.read_csv('./data/ROE_[2006, 2020].csv')
         self.df_origin_G = pd.read_csv('./data/G_[2006, 2020].csv')
+        self.df_origin_Profit = pd.read_csv('./data/Profit_[2015, 2020].csv')
 
     def hangye_list(self):
-        df_industry = pd.read_csv('./data/stock_industry.csv')
+        df_industry = pd.read_csv(self.industry_root)
         df_industry = df_industry[['code', 'code_name', 'industry']]
         industry_dic = {}
         for item in df_industry.values:
@@ -47,10 +53,11 @@ class oneStockDocument:
     def setDocument(self):
         self.document = {"code": self.code,
                          "name": self.name,
-                         "industury": self.industury,
+                         "industry": self.industry,
                          "ROE": self.ROE,
                          "PE": self.PE,
                          "G": self.G,
+                         "ProG": self.ProG,
                          "K_line": self.K_line
                          }
         with open('./data_osod/' + self.code + '.json', 'w') as f:
@@ -64,6 +71,7 @@ class oneStockDocument:
         self.ROE = {}
         self.PE = {}
         self.G = {}
+        self.ProG = {}
         self.K_line = {}
 
     def readROE(self):
@@ -78,14 +86,15 @@ class oneStockDocument:
 
     def readG(self):
 
-        df = self.df_origin_G[['code', 'YOYEPSBasic', 'season', 'year']][(
+        df = self.df_origin_G[['code', 'YOYEPSBasic', 'YOYNI', 'season', 'year']][(
             self.df_origin_G["code"] == self.code)]
 
         for item in df.values:
-            year = item[3]
-            season = item[2]
-            if item[1] < 100:
-                self.G['-'.join([str(year), str(season)])] = item[1]
+            year = item[4]
+            season = item[3]
+            if item[1] < 1000 and item[2] < 1000:
+                self.G['-'.join([str(year), str(season)])] = float(item[1])
+                self.ProG['-'.join([str(year), str(season)])] = float(item[2])
 
     def readPE(self):
         df_origin_PE = get_bao_PE_byCode(
@@ -94,7 +103,7 @@ class oneStockDocument:
 
         for item in df.values:
             date = item[0]
-            self.PE[date] = item[2]
+            self.PE[date] = float(item[2])
 
     def readK_line(self):
         df_origin_Kline = askPrice_byDate(
@@ -147,7 +156,7 @@ class oneStockDocument:
                     self.ROE['-'.join([str(ROE_newyear), str(ROE_newSea)])] = float(df.values[0][1])
                 else:
                     self.ROE['-'.join([str(ROE_newyear), str(ROE_newSea)])] = 0
-            #G
+            #G and ProG
             self.G = self.document['G']
             while True:
                 G_latest = max(self.G.keys())
@@ -163,8 +172,9 @@ class oneStockDocument:
                     break
                 df['season']=G_newSea
                 df['year']=G_newyear
-                df = df[['code', 'YOYEPSBasic', 'season', 'year']]
+                df = df[['code', 'YOYEPSBasic','YOYNI', 'season', 'year']]
                 self.G['-'.join([str(G_newyear), str(G_newSea)])] = float(df.values[0][1])
+                self.ProG['-'.join([str(ProG_newyear), str(ProG_newSea)])] = float(df.values[0][2])
             
             #PE
             self.PE = self.document['PE']
@@ -191,6 +201,7 @@ class oneStockDocument:
             self.document["ROE"] = self.ROE
             self.document["PE"] = self.PE
             self.document["G"] = self.G
+            self.document["ProG"] = self.ProG
             self.document["K_line"] = self.K_line
             with open('./data_osod/' + code + '.json', 'w') as f:
                 json.dump(self.document, f)
@@ -199,6 +210,6 @@ class oneStockDocument:
             
 
 if __name__ == '__main__':
-    store = oneStockDocument()
+    store = oneStockDocument(industry_root = './data/stock_industry.csv')
     store.setupDateStore()
     store.updateStore(datetime.now().strftime("%Y-%m-%d"))
