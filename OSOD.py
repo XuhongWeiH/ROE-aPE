@@ -26,7 +26,7 @@ class oneStockDocument():
         self.G = {}
         self.ProG = {}
         self.K_line = {}
-        self.shizhi = 0
+        self.shizhi = {}
 
         self.document = {"code": self.code,
                          "name": self.name,
@@ -35,6 +35,7 @@ class oneStockDocument():
                          "PE": self.PE,
                          "G": self.G,
                          "ProG":self.ProG,
+                         "shizhi": self.shizhi,
                          "K_line": self.K_line
                          }
 
@@ -58,6 +59,7 @@ class oneStockDocument():
                          "PE": self.PE,
                          "G": self.G,
                          "ProG": self.ProG,
+                         "shizhi": self.shizhi,
                          "K_line": self.K_line
                          }
         with open('./data_osod/' + self.code + '.json', 'w') as f:
@@ -73,6 +75,7 @@ class oneStockDocument():
         self.G = {}
         self.ProG = {}
         self.K_line = {}
+        self.shizhi = {}
 
     def readROE(self):
 
@@ -95,6 +98,17 @@ class oneStockDocument():
             if item[1] < 1000 and item[2] < 1000:
                 self.G['-'.join([str(year), str(season)])] = float(item[1])
                 self.ProG['-'.join([str(year), str(season)])] = float(item[2])
+
+    def readProfitTotal(self):
+
+        df = self.df_origin_Profit[['code', 'netProfit', 'season', 'year']][(
+            self.df_origin_Profit["code"] == self.code)]
+
+        for item in df.values:
+            year = item[3]
+            season = item[2]
+            if item[1] < 1e20 :
+                self.shizhi['-'.join([str(year), str(season)])] = float(item[1])
 
     def readPE(self):
         df_origin_PE = get_bao_PE_byCode(
@@ -124,6 +138,7 @@ class oneStockDocument():
             self.name = self.industry_dic[code][0]
             self.readROE()
             self.readG()
+            self.readProfitTotal()
             self.readPE()
             self.readK_line()
             self.setDocument()
@@ -158,6 +173,7 @@ class oneStockDocument():
                     self.ROE['-'.join([str(ROE_newyear), str(ROE_newSea)])] = 0
             #G and ProG
             self.G = self.document['G']
+            self.ProG = self.document['ProG']
             while True:
                 G_latest = max(self.G.keys())
                 year_latest = int(G_latest.split('-')[0])
@@ -175,6 +191,24 @@ class oneStockDocument():
                 df = df[['code', 'YOYEPSBasic','YOYNI', 'season', 'year']]
                 self.G['-'.join([str(G_newyear), str(G_newSea)])] = float(df.values[0][1])
                 self.ProG['-'.join([str(ProG_newyear), str(ProG_newSea)])] = float(df.values[0][2])
+            # shizhi
+            self.shizhi = self.document['shizhi']
+            while True:
+                shizhi_latest = max(self.shizhi.keys())
+                year_latest = int(shizhi_latest.split('-')[0])
+                season_latest = int(shizhi_latest.split('-')[1])
+                shizhi_newyear = year_latest
+                shizhi_newSea = season_latest + 1
+                if shizhi_newSea == 5:
+                    shizhi_newyear = year_latest + 1
+                    shizhi_newSea = 1
+                df = computeProfit(code, shizhi_newyear, shizhi_newSea)
+                if df.empty:
+                    break
+                df['season']=shizhi_newSea
+                df['year']=shizhi_newyear
+                df = df[['code', 'netProfit', 'season', 'year']]
+                self.shizhi['-'.join([str(G_newyear), str(G_newSea)])] = float(df.values[0][1])
             
             #PE
             self.PE = self.document['PE']
@@ -211,5 +245,5 @@ class oneStockDocument():
 
 if __name__ == '__main__':
     store = oneStockDocument(industry_root = './data/stock_industry.csv')
-    store.setupDateStore()
+    # store.setupDateStore()
     store.updateStore(datetime.now().strftime("%Y-%m-%d"))
