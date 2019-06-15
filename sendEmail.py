@@ -62,20 +62,10 @@ def email(dstEmail, outStr):
 if __name__ == "__main__":
     outStr = \
     '''
-    第2.5版本价值投资来袭：
-    经过今天大盘走高的迹象，昨天推荐的股票偏稳重保守，可将其中的银行股或有闲钱的换成如下
-    低估值的医药股（老龄化严重，医药行业必然兴起，esp中药）：
-    中国医药
-    国药股份
-    华东医药
-    华润三九
-    正泰电器
-    大华股份
-    顾家家居
-    另带一手：
-    口子窖
+    ['海螺水泥' '建筑材料'] 0.08157658773993327 306.3601446
+    ['新城控股' '房地产'] 0.08886904186081516 122.08810565
+    ['华侨城A' '房地产'] 0.22321523507829724 112.9432884678
 
-    如若不想收到邮件，请告诉我，不再打扰
     '''
     # outStr += "注意事项：\n \
     #             以上股票随便买，都是低估值，有钱就买，越便宜越买\
@@ -85,8 +75,8 @@ if __name__ == "__main__":
     #             4.下午最佳卖出是13：10分-13：30分。\n\
     #             \
     #           "
-    sendlist = ['big_weixuhong@qq.com','719253612@qq.com','sunyixin610@126.com','364141009@qq.com','whitekreuz@163.com',\
-                'zzhisheng@outlook.com', 'qiujtmaric@163.com']
+    sendlist = ['big_weixuhong@qq.com','719253612@qq.com', 'qiujtmaric@163.com']#,'sunyixin610@126.com','364141009@qq.com','whitekreuz@163.com',\
+               # 'zzhisheng@outlook.com', 'qiujtmaric@163.com']
     print(outStr)
     for item in sendlist:
         email(item, outStr)

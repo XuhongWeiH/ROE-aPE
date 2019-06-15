@@ -67,4 +67,4 @@ def compute_total_Profit(yearSE):
     bs.logout()
 
 if __name__ == '__main__':
-     compute_total_Profit(yearSE = [2015, 2020])
+     compute_total_Profit(yearSE = [2005, 2020])
