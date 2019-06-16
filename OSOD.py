@@ -136,11 +136,13 @@ class oneStockDocument():
 
     def setupDateStore(self):
         
-        self.clearDateVolum()
+        
         for code in tqdm(self.industry_dic.keys()):
-            bs.login()
+            
             if os.path.exists('./data_osod/' + code + '.json'):
                 continue
+            self.clearDateVolum()
+            bs.login()
             self.code = code
             self.industry = self.industry_dic[code][1]
             self.name = self.industry_dic[code][0]
@@ -150,6 +152,7 @@ class oneStockDocument():
             self.readPE()
             self.readK_line()
             self.setDocument()
+            bs.login()
 
     def updateStore(self, todayEnd):
         for code in tqdm(self.industry_dic.keys()):
@@ -158,9 +161,13 @@ class oneStockDocument():
             with open('./data_osod/' + code + '.json', 'r') as f:
                 self.document = json.load(fp=f)
             
+            
             #ROE
             self.ROE = self.document['ROE']
+            if self.ROE == {}:
+                continue
             while True:
+                
                 ROE_latest = max(self.ROE.keys())
                 year_latest = int(ROE_latest.split('-')[0])
                 season_latest = int(ROE_latest.split('-')[1])
@@ -182,7 +189,10 @@ class oneStockDocument():
             #G and ProG
             self.G = self.document['G']
             self.ProG = self.document['ProG']
+            
             while True:
+                if self.G == {}:
+                    break
                 G_latest = max(self.G.keys())
                 year_latest = int(G_latest.split('-')[0])
                 season_latest = int(G_latest.split('-')[1])
@@ -197,13 +207,22 @@ class oneStockDocument():
                 df['season']=G_newSea
                 df['year']=G_newyear
                 df = df[['code', 'YOYEPSBasic','YOYNI', 'season', 'year']]
-                self.G['-'.join([str(G_newyear), str(G_newSea)])] = float(df.values[0][1])
-                self.ProG['-'.join([str(G_newyear), str(G_newSea)])] = float(df.values[0][2])
+                if df.values[0][1] != '':         
+                    self.G['-'.join([str(G_newyear), str(G_newSea)])] = float(df.values[0][1])
+                else:
+                    self.G['-'.join([str(G_newyear), str(G_newSea)])] = 0
+                if df.values[0][2] != '':         
+                    self.ProG['-'.join([str(G_newyear), str(G_newSea)])] = float(df.values[0][2])
+                else:
+                    self.ProG['-'.join([str(G_newyear), str(G_newSea)])] = 0
+                
             
             # shizhi
             self.shizhi = self.document['shizhi']
             self.guben = self.document['guben']
             while True:
+                if self.shizhi == {}:
+                    break
                 shizhi_latest = max(self.shizhi.keys())
                 year_latest = int(shizhi_latest.split('-')[0])
                 season_latest = int(shizhi_latest.split('-')[1])
@@ -223,6 +242,8 @@ class oneStockDocument():
             
             #PE
             self.PE = self.document['PE']
+            if self.PE == {}:
+                continue
             df = get_bao_PE_byCode(code=code,\
                                    sltDateBegin=max(self.PE.keys()), \
                                    sltDateEnd=todayEnd)
@@ -242,8 +263,6 @@ class oneStockDocument():
             for item in df.values:
                 date = item[0]
                 self.K_line[date] = (float(item[3]) + float(item[4]))/2
-
-            #hongli
 
             self.document["ROE"] = self.ROE
             self.document["PE"] = self.PE

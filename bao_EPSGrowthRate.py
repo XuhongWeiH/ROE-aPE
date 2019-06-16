@@ -66,4 +66,4 @@ def compute_total_G(yearSE):
     bs.logout()
 
 if __name__ == '__main__':
-     compute_total_G(yearSE = [2006, 2020])
+     compute_total_G(yearSE = [2005, 2020])

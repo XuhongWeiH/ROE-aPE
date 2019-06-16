@@ -20,8 +20,14 @@ class stockFeature(oneStockDocument):
         
     def peAnalyse(self):
         industry_dic = self.hangye_list()
+
+        test_flag = 0
         for code in industry_dic.keys():
-            
+
+            if (code != 'sh.603369' and test_flag == 0):
+                continue
+            test_flag = 1
+
             with open('./data_osod/' + code + '.json', 'r') as f:
                 self.document = json.load(fp=f)
 
@@ -81,7 +87,19 @@ class stockFeature(oneStockDocument):
                     yshizhi += [float(shizhi[item])*100]
                     count += 1
             yshizhi = np.array(yshizhi)
+
+            guben = self.document['guben']
+            xguben = []
+            yguben = []
+            count = 0
+            for item in guben.keys():
+                xguben += [count]
+                yguben+= [float(guben[item])*100]
+                count += 1
+            yguben = np.array(yguben)
             
+            if len(yshizhi) < 3 or len(yROE) < 3:
+                continue
             #if
             if y[-1] > 30:
                 continue
@@ -119,14 +137,16 @@ class stockFeature(oneStockDocument):
                 print('年份:2019',fenhong.values[0])
                 print('股息率%.2f%%'%(100*float(fenhong.values[0][-2])/yk[-1]),'当前股价:',yk[-1])
             
-            if False:
+            if True:
                 if len(yk) != len(x):
                     continue
-                plt.clf()
+                # if len(y) < 800:
+                #     continue
+                
                 plt.figure(1,figsize=(13,7))
                 plt.subplot(321)
                 plt.title('PE沪'+self.document['code'] + '_' + str(max(shizhi.values())/1e8))
-                plt.ylim(min(np.min(y[-1400:]),min(yk))-3, max(min(np.max(y[-1400:]),60), max(yk))+3)
+                plt.ylim(min(np.min(y[-800:]),min(yk))-3, max(min(np.max(y[-800:]),60), max(yk))+3)
                 plt.plot(x, y)
                 try:
                     plt.plot(x, yk,'r--')
@@ -143,8 +163,8 @@ class stockFeature(oneStockDocument):
                 plt.plot(xg, yg)
                 plt.title('G_' + 'PEG=' + str(y[-1] / ((yshizhi[-1]/yshizhi[-3])**0.5 - 1)/100))
                 plt.plot(xg, [np.mean(yg[-4:]) for i in range(len(yg))])
-                plt.plot(xg, [np.max(yg[17:]) for i in range(len(yg))])
-                plt.plot(xg, [np.min(yg[17:]) for i in range(len(yg))])
+                # plt.plot(xg, [np.max(yg[17:]) for i in range(len(yg))])
+                # plt.plot(xg, [np.min(yg[17:]) for i in range(len(yg))])
 
                 plt.subplot(323)
                 plt.plot(xProG, yProG)
@@ -162,6 +182,11 @@ class stockFeature(oneStockDocument):
                 plt.plot(xshizhi, yshizhi)
                 plt.title('shizhi')
                 plt.plot(xshizhi, [min(yshizhi) for i in range(len(yshizhi))])
+
+                plt.subplot(326)
+                plt.plot(xguben, yguben)
+                plt.title('guben')
+                plt.plot(xguben, [min(yguben) for i in range(len(yguben))])
                 plt.show()
 
 if __name__ == '__main__':
