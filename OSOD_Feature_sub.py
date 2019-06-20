@@ -101,31 +101,31 @@ class stockFeature(oneStockDocument):
             if len(yshizhi) < 3 or len(yROE) < 3:
                 continue
             #if
-            if y[-1] > 30:
-                continue
+            # if y[-1] > 30:
+            #     continue
 
             if max(shizhi.values()) < 1e9:
                 continue
 
             if yshizhi[-1]/yshizhi[-3] < 0:
                 continue
+            if len(y) < 600:
+                continue
 
             peg = y[-1] / ((yshizhi[-1]/yshizhi[-3])**0.5 - 1)/100
-            if peg > 10 or y[-1] / peg < 0.05:
-                continue
+            # if peg > 10 or y[-1] / peg < 0.05:
+            #     continue
 
             # if y[-1] > (np.mean(y[-800:]) - np.min(y[-800:]))/3*2 + np.min(y[-800:]):
             #     continue
 
-            if np.mean(yROE[-3:]) < 12:
-                continue
-            if self.industry_dic[self.document['code']][1] in ['化工','采掘','机械设备','钢铁','传媒','有色金属']:
-                continue
-            if yshizhi[-1] < yshizhi[-2]:
-                continue
+            # if np.mean(yROE[-3:]) < 12:
+            #     continue
+            # if self.industry_dic[self.document['code']][1] in ['化工','采掘','机械设备','钢铁','传媒','有色金属']:
+            #     continue
+            # if yshizhi[-1] < yshizhi[-2]:
+            #     continue
 
-            if len(y) < 600:
-                continue
             #自筛选
             # if self.industry_dic[self.document['code']][1] == '医药生物':
             #     continue
@@ -145,8 +145,8 @@ class stockFeature(oneStockDocument):
             #     continue
             # if self.industry_dic[self.document['code']][1] == '电气设备':
             #     continue
-            # if self.industry_dic[self.document['code']][1] == '家用电器':
-            #     continue
+            if self.industry_dic[self.document['code']][1] != '非银金融':
+                continue
             # if (y[-1]-np.min(y[-600:]))/(np.max(y[-600:])-np.min(y[-600:]))*100//1 > 20:
             #     continue
 
@@ -155,7 +155,7 @@ class stockFeature(oneStockDocument):
             if fenhong.empty:
                 fenhong = searchHongli(self.document['code'], 2018)
                 if fenhong.empty:
-                    print('抠门公司无分红')
+                    # print('抠门公司无分红')
                     continue
                 # else:
                     # print('年份:2018',fenhong.values[0])
@@ -168,10 +168,10 @@ class stockFeature(oneStockDocument):
 
                 print(self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
-                    max(shizhi.values())//1e8,'亿', (y[-1]-np.min(y[-600:]))/(np.max(y[-600:])-np.min(y[-600:]))*100//1, '%',\
-                    "当前%.2f,最低买入%.2f,更低买入%.2f,稍高买入%.2f"%(yk[-1],np.min(y[-600:])*yk[-1]/y[-1],np.min(y[-600:])*yk[-1]/y[-1]*0.95,np.min(y[-600:])*yk[-1]/y[-1]*1.05),\
+                    max(shizhi.values())//1e8,'亿,价格处于高位的', (y[-1]-np.min(y[-600:]))/(np.max(y[-600:])-np.min(y[-600:]))*100//1, '%',\
+                    "当前价格%.2f,最低买入%.2f,更低买入%.2f,稍高买入%.2f"%(yk[-1],np.min(y[-600:])*yk[-1]/y[-1],np.min(y[-600:])*yk[-1]/y[-1]*0.95,np.min(y[-600:])*yk[-1]/y[-1]*1.15),\
                     "回归价格:%.2f~%.2f~%.2f"%(np.mean(y[-600:])*yk[-1]/y[-1]*0.8,np.mean(y[-600:])*yk[-1]/y[-1],np.mean(y[-600:])*yk[-1]/y[-1]*1.2)\
-                    ,'股息率%.2f%%,%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3]))
+                    ,'股息率%.2f%%,%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3][:4]), '\n')
             
             if False:
                 if len(yk) != len(x):
@@ -226,8 +226,8 @@ class stockFeature(oneStockDocument):
                 plt.show()
 
 if __name__ == '__main__':
-    stock = stockFeature('./data/stock_industry_select.csv')
-    stock.setupDateStore()
-    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    stock = stockFeature('./data/stock_industry.csv')
+    # stock.setupDateStore()
+    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock.peAnalyse()
         
