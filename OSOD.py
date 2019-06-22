@@ -123,7 +123,7 @@ class oneStockDocument():
     def readPE(self):
         df_origin_PE = get_bao_PE_byCode(
             code=self.code, sltDateBegin='2008-01-01', sltDateEnd='2019-04-30')
-        df = df_origin_PE[['date', 'code', 'peTTM','pbMRQ']]
+        df = df_origin_PE[['date', 'code', 'peTTM', 'pbMRQ']]
 
         for item in df.values:
             date = item[0]
@@ -150,14 +150,13 @@ class oneStockDocument():
             bs.login()
             self.code = code
             self.industry = self.industry_dic[code][1]
-            if self.industry = self.industry_dic[code][1] in ['银行'， '非银金融']
-                self.name = self.industry_dic[code][0]
-                self.readROE()
-                self.readG()
-                self.readProfitTotal()
-                self.readPE()
-                self.readK_line()
-                self.setDocument()
+            self.name = self.industry_dic[code][0]
+            self.readROE()
+            self.readG()
+            self.readProfitTotal()
+            self.readPE()
+            self.readK_line()
+            self.setDocument()
             bs.login()
 
     def updateStore(self, todayEnd):
@@ -257,20 +256,22 @@ class oneStockDocument():
 
             for item in df.values:
                 date = item[0]
-                self.PE[date] = item[2]
+                self.PE[date] = float(item[2])
 
             #PB
-            self.PB = self.document['PB']
-            if self.PB == {}:
-                continue
-            df = get_bao_PE_byCode(code=code,\
-                                   sltDateBegin=max(self.PB.keys()), \
-                                   sltDateEnd=todayEnd)
-            df = df[['date', 'code', 'peTTM', 'pbMRQ']]
-
-            for item in df.values:
-                date = item[0]
-                self.PB[date] = item[3]
+            self.industry = self.industry_dic[code][1]
+            if self.industry == self.industry_dic[code][1] in ['银行', '非银金融']:
+                self.PB = self.document['PB']
+                if self.PB == {}:
+                    continue
+                df = get_bao_PE_byCode(code=code,\
+                                    sltDateBegin=max(self.PB.keys()), \
+                                    sltDateEnd=todayEnd)
+                df = df[['date', 'code', 'peTTM', 'pbMRQ']]
+                print('is PB')
+                for item in df.values:
+                    date = item[0]
+                    self.PB[date] = float(item[3])
 
             #K_line
             self.K_line = self.document['K_line']

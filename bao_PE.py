@@ -62,14 +62,14 @@ def get_bao_PE(sltDate = '2019-03-24'):
 def get_bao_PE_byCode(code, sltDateBegin, sltDateEnd):
     lg = bs.login()
     rs = bs.query_history_k_data_plus(str(code),
-        "date,code,peTTM",
+        "date,code,peTTM,pbMRQ",
         start_date=sltDateBegin, end_date=sltDateEnd, 
         frequency="d", adjustflag="2")
     result_list = []
     while (rs.error_code == '0') & rs.next():
         # 获取一条记录，将记录合并在一起
         lrs = rs.get_row_data()
-        if lrs[2] != '' and float(lrs[2]) > -100:
+        if lrs[2] != '' and lrs[3] != '' and float(lrs[2]) > -100 and float(lrs[3]) > -100:
             result_list.append(lrs)
     
     result = pd.DataFrame(result_list, columns=rs.fields)

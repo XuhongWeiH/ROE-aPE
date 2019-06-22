@@ -31,12 +31,20 @@ class stockFeature(oneStockDocument):
             with open('./data_osod/' + code + '.json', 'r') as f:
                 self.document = json.load(fp=f)
 
-            pe = self.document['PE']
-            x = [i for i in range(len(pe.keys()))]
-            y = []
-            for item in pe.values():
-                y += [float(item)]
-            y = np.array(y)
+            if self.industry_dic[self.document['code']][1] in ['银行', '非银金融']:
+                pb = self.document['PB']
+                x = [i for i in range(len(pb.keys()))]
+                y = []
+                for item in pb.values():
+                    y += [float(item)]
+                y = np.array(y)
+            else:
+                pe = self.document['PE']
+                x = [i for i in range(len(pe.keys()))]
+                y = []
+                for item in pe.values():
+                    y += [float(item)]
+                y = np.array(y)
 
             kline = self.document['K_line']
             yk = []
@@ -145,7 +153,7 @@ class stockFeature(oneStockDocument):
             #     continue
             # if self.industry_dic[self.document['code']][1] == '电气设备':
             #     continue
-            if self.industry_dic[self.document['code']][1] != '非银金融':
+            if self.industry_dic[self.document['code']][1] not in  ['非银金融', '银行']:
                 continue
             # if (y[-1]-np.min(y[-600:]))/(np.max(y[-600:])-np.min(y[-600:]))*100//1 > 20:
             #     continue
@@ -171,7 +179,7 @@ class stockFeature(oneStockDocument):
                     max(shizhi.values())//1e8,'亿,价格处于高位的', (y[-1]-np.min(y[-600:]))/(np.max(y[-600:])-np.min(y[-600:]))*100//1, '%',\
                     "当前价格%.2f,最低买入%.2f,更低买入%.2f,稍高买入%.2f"%(yk[-1],np.min(y[-600:])*yk[-1]/y[-1],np.min(y[-600:])*yk[-1]/y[-1]*0.95,np.min(y[-600:])*yk[-1]/y[-1]*1.15),\
                     "回归价格:%.2f~%.2f~%.2f"%(np.mean(y[-600:])*yk[-1]/y[-1]*0.8,np.mean(y[-600:])*yk[-1]/y[-1],np.mean(y[-600:])*yk[-1]/y[-1]*1.2)\
-                    ,'股息率%.2f%%,%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3][:4]), '\n')
+                    ,'股息率%.2f%%,%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3]), '\n')
             
             if False:
                 if len(yk) != len(x):
@@ -181,7 +189,7 @@ class stockFeature(oneStockDocument):
                 
                 plt.figure(1,figsize=(13,7))
                 plt.subplot(321)
-                plt.title('PE沪'+self.document['code'] + '_' + str(max(shizhi.values())/1e8))
+                plt.title('PB沪'+self.document['code'] + '_' + str(max(shizhi.values())/1e8))
                 plt.ylim(min(np.min(y[-800:]),min(yk))-3, max(min(np.max(y[-800:]),60), max(yk))+3)
                 plt.plot(x, y)
                 try:
