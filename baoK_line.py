@@ -22,7 +22,7 @@ def askPrice_byDate(code, sltDateBegin, sltDateEnd):
     lg = bs.login()
 
     rs = bs.query_history_k_data_plus(code,
-        "date, code, open, high, low, close",
+        "date, code, open, high, low, close, volume,amount",
         start_date=sltDateBegin, end_date=sltDateEnd,
         frequency="d", adjustflag="2")
 
@@ -36,4 +36,5 @@ def askPrice_byDate(code, sltDateBegin, sltDateEnd):
     return result
 
 if __name__ == "__main__":
-    askPrice_byDate('sz.000651', '2016-01-01', '2016-10-02')
+    askPrice_byDate('sh.000001', '2016-01-01', '2016-10-02')
+    

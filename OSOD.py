@@ -28,6 +28,8 @@ class oneStockDocument():
         self.G = {}
         self.ProG = {}
         self.K_line = {}
+        self.volume = {}
+        self.amount = {}
         self.shizhi = {}
         self.guben = {}
 
@@ -41,7 +43,9 @@ class oneStockDocument():
                          "ProG":self.ProG,
                          "shizhi": self.shizhi,
                          "guben": self.guben,
-                         "K_line": self.K_line
+                         "K_line": self.K_line,
+                         "volume" : self.volume,
+                         "amount" : self.amount
                          }
 
         self.df_origin_ROE = pd.read_csv('./data/ROE_[2006, 2020].csv')
@@ -67,7 +71,10 @@ class oneStockDocument():
                          "ProG": self.ProG,
                          "shizhi": self.shizhi,
                          "guben": self.guben,
-                         "K_line": self.K_line
+                         "K_line": self.K_line,
+                         "volume" : self.volume,
+                         "amount" : self.amount
+                         
                          }
         with open('./data_osod/' + self.code + '.json', 'w') as f:
             json.dump(self.document, f)
@@ -83,6 +90,8 @@ class oneStockDocument():
         self.G = {}
         self.ProG = {}
         self.K_line = {}
+        self.volume = {}
+        self.amount = {}
         self.shizhi = {}
         self.guben = {}
 
@@ -133,11 +142,14 @@ class oneStockDocument():
     def readK_line(self):
         df_origin_Kline = askPrice_byDate(
             code=self.code, sltDateBegin='2008-01-01', sltDateEnd='2019-04-30')
-        df = df_origin_Kline[["date", "code", "open", "high", "low", "close"]]
+        df = df_origin_Kline[["date", "code", "open", "high", "low", "close","volume","amount"]]
 
         for item in df.values:
             date = item[0]
             self.K_line[date] = (float(item[3]) + float(item[4]))/2
+            self.volume[date] = float(item[6])
+            self.amount[date] = float(item[7])
+
 
     def setupDateStore(self):
         
@@ -268,21 +280,24 @@ class oneStockDocument():
                                     sltDateBegin=max(self.PB.keys()), \
                                     sltDateEnd=todayEnd)
                 df = df[['date', 'code', 'peTTM', 'pbMRQ']]
-                print('is PB')
                 for item in df.values:
                     date = item[0]
                     self.PB[date] = float(item[3])
 
             #K_line
             self.K_line = self.document['K_line']
+            self.volume = self.document['volume']
+            self.amount = self.document['amount']
             df = askPrice_byDate(code=code, \
                                             sltDateBegin=max(self.K_line.keys()), \
                                             sltDateEnd=todayEnd)
-            df = df[["date", "code", "open", "high", "low", "close"]]
+            df = df[["date", "code", "open", "high", "low", "close","volume","amount"]]
             
             for item in df.values:
                 date = item[0]
                 self.K_line[date] = (float(item[3]) + float(item[4]))/2
+                self.volume[date] = float(item[6])
+                self.amount[date] = float(item[7])
 
             self.document["ROE"] = self.ROE
             self.document["PE"] = self.PE
@@ -292,6 +307,9 @@ class oneStockDocument():
             self.document["K_line"] = self.K_line
             self.document['shizhi'] = self.shizhi
             self.document['guben'] = self.guben
+            self.document['volume'] = self.volume
+            self.document['amount'] = self.amount
+
             with open('./data_osod/' + code + '.json', 'w') as f:
                 json.dump(self.document, f)
                          
