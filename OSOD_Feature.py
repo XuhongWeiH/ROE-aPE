@@ -54,6 +54,15 @@ class stockFeature(oneStockDocument):
                     y += [float(item)]
                 y = np.array(y)
 
+            pcf = self.document['PCF']
+            xpcf = [i for i in range(len(pcf.keys()))]
+            ypcf = []
+            for item in pcf.values():
+                ypcf += [float(item)]
+            ypcf = np.array(ypcf)
+
+            pcf = self.document['PCF']
+
             kline = self.document['K_line']
             volume = self.document['volume']
             amount = self.document['amount']
@@ -251,6 +260,14 @@ class stockFeature(oneStockDocument):
                 plt.plot(x, [pe_min for i in range(len(y))])
 
                 # plt.subplot(323)
+                # plt.ylim(np.min(ypcf[-600:]),np.max(ypcf[-600:]))
+                # plt.plot(xpcf, ypcf)
+                # plt.title('PCF')
+                # plt.plot(xpcf, [np.mean(ypcf[-600:]) for i in range(len(ypcf))])
+                # plt.plot(xpcf, [np.max(ypcf[-600:]) for i in range(len(ypcf))])
+                # plt.plot(xpcf, [np.min(ypcf[-600:]) for i in range(len(ypcf))])
+
+                # plt.subplot(323)
                 # plt.plot(xProG, yProG)
                 # plt.title('net profits growth rate')
                 # plt.plot(xProG, [np.max(yProG) for i in range(len(yProG))])
@@ -275,12 +292,11 @@ class stockFeature(oneStockDocument):
                 # plt.show()
 
                 
-                
+                #相关度考察
                 plt.subplot(323)
                 plt.title('dapan%.2f--mean:%.2f'%(cor[1][0], np.mean(xiangguandu)))
                 plt.plot([i for i in range(kaocha_day)], yk_dapan_sub,'g')
-                
-
+            
                 plt.subplot(325)
                 plt.plot([i for i in range(kaocha_day)], yk_sub,'r')
                 # plt.plot(xk, yk_vol,'g')
@@ -294,8 +310,8 @@ if __name__ == '__main__':
     stock = stockFeature('./data/stock_industry_select630.csv')
     # stock = stockFeature('./data/stock_industry_select_chicang.csv')
     
-    # stock.setupDateStore()
-    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    stock.setupDateStore()
+    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse()
     stock_list = sorted(stock_list, key=lambda s: s[1])
     print('================')

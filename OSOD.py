@@ -25,6 +25,7 @@ class oneStockDocument():
         self.ROE = {}
         self.PE = {}
         self.PB = {}
+        self.PCF = {}
         self.G = {}
         self.ProG = {}
         self.K_line = {}
@@ -39,6 +40,7 @@ class oneStockDocument():
                          "ROE": self.ROE,
                          "PE": self.PE,
                          "PB": self.PB,
+                         "PCF": self.PCF,
                          "G": self.G,
                          "ProG":self.ProG,
                          "shizhi": self.shizhi,
@@ -67,6 +69,7 @@ class oneStockDocument():
                          "ROE": self.ROE,
                          "PE": self.PE,
                          "PB": self.PB,
+                         "PCF": self.PCF,
                          "G": self.G,
                          "ProG": self.ProG,
                          "shizhi": self.shizhi,
@@ -87,6 +90,7 @@ class oneStockDocument():
         self.ROE = {}
         self.PE = {}
         self.PB = {}
+        self.PCF = {}
         self.G = {}
         self.ProG = {}
         self.K_line = {}
@@ -129,15 +133,16 @@ class oneStockDocument():
                 self.shizhi['-'.join([str(year), str(season)])] = float(item[1])
                 self.guben['-'.join([str(year), str(season)])] = float(item[2])
 
-    def readPE(self):
+    def readPEPBPCF(self):
         df_origin_PE = get_bao_PE_byCode(
             code=self.code, sltDateBegin='2008-01-01', sltDateEnd='2019-04-30')
-        df = df_origin_PE[['date', 'code', 'peTTM', 'pbMRQ']]
+        df = df_origin_PE[['date', 'code', 'peTTM', 'pbMRQ','pcfNcfTTM']]
 
         for item in df.values:
             date = item[0]
             self.PE[date] = float(item[2])
             self.PB[date] = float(item[3])
+            self.PCF[date] = float(item[4])
 
     def readK_line(self):
         df_origin_Kline = askPrice_byDate(
@@ -166,7 +171,7 @@ class oneStockDocument():
             self.readROE()
             self.readG()
             self.readProfitTotal()
-            self.readPE()
+            self.readPEPBPCF()
             self.readK_line()
             self.setDocument()
             bs.login()
@@ -257,18 +262,20 @@ class oneStockDocument():
                 self.shizhi['-'.join([str(shizhi_newyear), str(shizhi_newSea)])] = float(df.values[0][1])
                 self.guben['-'.join([str(shizhi_newyear), str(shizhi_newSea)])] = float(df.values[0][2])
             
-            #PE
+            #PE & PCF
             self.PE = self.document['PE']
+            self.PCF = self.document['PCF']
             if self.PE == {}:
                 continue
             df = get_bao_PE_byCode(code=code,\
                                    sltDateBegin=max(self.PE.keys()), \
                                    sltDateEnd=todayEnd)
-            df = df[['date', 'code', 'peTTM']]
+            df = df[['date', 'code', 'peTTM','pcfNcfTTM']]
 
             for item in df.values:
                 date = item[0]
                 self.PE[date] = float(item[2])
+                self.PCF[date] = float(item[3])
 
             #PB
             self.industry = self.industry_dic[code][1]
@@ -302,6 +309,7 @@ class oneStockDocument():
             self.document["ROE"] = self.ROE
             self.document["PE"] = self.PE
             self.document["PB"] = self.PB
+            self.document["PCF"] = self.PCF
             self.document["G"] = self.G
             self.document["ProG"] = self.ProG
             self.document["K_line"] = self.K_line

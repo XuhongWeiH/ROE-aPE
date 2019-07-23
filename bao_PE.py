@@ -62,7 +62,7 @@ def get_bao_PE(sltDate = '2019-03-24'):
 def get_bao_PE_byCode(code, sltDateBegin, sltDateEnd):
     lg = bs.login()
     rs = bs.query_history_k_data_plus(str(code),
-        "date,code,peTTM,pbMRQ",
+        "date,code,peTTM,pbMRQ,pcfNcfTTM",
         start_date=sltDateBegin, end_date=sltDateEnd, 
         frequency="d", adjustflag="2")
     result_list = []
