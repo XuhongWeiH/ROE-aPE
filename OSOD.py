@@ -142,7 +142,10 @@ class oneStockDocument():
             date = item[0]
             self.PE[date] = float(item[2])
             self.PB[date] = float(item[3])
-            self.PCF[date] = float(item[4])
+            if item[4] == '' :
+                self.PCF[date] = 0 
+            else: 
+                self.PCF[date] = float(item[4])
 
     def readK_line(self):
         df_origin_Kline = askPrice_byDate(
@@ -151,7 +154,7 @@ class oneStockDocument():
 
         for item in df.values:
             date = item[0]
-            self.K_line[date] = (float(item[3]) + float(item[4]))/2
+            self.K_line[date] = float(item[5])
             self.volume[date] = float(item[6])
             self.amount[date] = float(item[7])
 
@@ -302,9 +305,16 @@ class oneStockDocument():
             
             for item in df.values:
                 date = item[0]
-                self.K_line[date] = (float(item[3]) + float(item[4]))/2
-                self.volume[date] = float(item[6])
-                self.amount[date] = float(item[7])
+                self.K_line[date] = float(item[5])
+                if item[6] == '':
+                    self.volume[date] =0
+                else:
+                    self.volume[date] = float(item[6])
+                if item[7] == '':
+                    self.amount[date] =0
+                else:
+                    self.amount[date] = float(item[7])
+                
 
             self.document["ROE"] = self.ROE
             self.document["PE"] = self.PE

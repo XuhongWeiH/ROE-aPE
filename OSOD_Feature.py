@@ -134,7 +134,12 @@ class stockFeature(oneStockDocument):
                 count += 1
             yguben = np.array(yguben)
             
-            peg = y[-1] / ((yshizhi[-1]/yshizhi[-3])**0.5 - 1)/100
+            y2g = (yshizhi[-2]/yshizhi[-3] - 1)
+            y1g = (yshizhi[-1]/yshizhi[-2] - 1)
+            growth0 = (min(0.25, y2g)*0.4 + min(0.25, y1g)*0.6)
+            growth =min(0.18,0.85*growth0 )
+            peg = y[-1] / growth /100
+            
            
             # if len(yshizhi) < 3 or len(yROE) < 3:
             #     continue
@@ -148,19 +153,20 @@ class stockFeature(oneStockDocument):
             #     continue
 
             if len(y)<600:
-                pe_max =  np.max(y[-400:])
-                pe_mean = np.mean(y[-400:])
+                pe_max =  min(80,np.max(y[-400:]))
+                pe_mean = min(40,np.mean(y[-400:]))
                 pe_min =  np.min(y[-400:])
             else:
-                pe_max =  np.max(y[-600:])
-                pe_mean = np.mean(y[-600:])
-                pe_min =  np.min(y[-600:])
+                pe_max =  min(80,np.max(y[-700:]))
+                pe_mean = min(40,np.mean(y[-700:]))
+                pe_min =  np.min(y[-700:])
+            pe_expect = (0.75*y[-1] + 0.25*pe_mean)
             price_max = np.max(yk[-120:])
             price_min = np.min(yk[-120:])
             if self.industry_dic[self.document['code']][1] in ['银行']:
-                jiagetidu = np.array([1+0.01*i for i in range(-2,3,1)])
+                jiagetidu = np.array([1+0.01*i for i in range(0,3,1)])
             else:
-                jiagetidu = np.array([1+0.035*i for i in range(-2,3,1)])
+                jiagetidu = np.array([1+0.035*i for i in range(0,3,1)])
 
             #过年要改年份
             fenhong = searchHongli(self.document['code'], 2019)
@@ -169,6 +175,10 @@ class stockFeature(oneStockDocument):
                 if fenhong.empty:
                     # print('抠门公司无分红->')
                     continue
+            try:
+                float(fenhong.values[0][-2])
+            except:
+                continue
             #     else:
             #         print('年份:2018',fenhong.values[0])
             #         print('股息率%.2f%%,%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3]),'当前股价:',yk[-1])
@@ -187,9 +197,10 @@ class stockFeature(oneStockDocument):
             if cor[1][0] > 0.1 :
                 if (np.mean(yROE[-5:]) < 15 or (y[-1]-pe_min)/(pe_max-pe_min)*100//1 > 15):
                     pass
-                    continue
+                    # continue
                 else:
-                    additional = '-防御性不高，行情不好不要买'
+                    pass
+                    # additional = '\n股价随大盘波动较大'
                     # continue#
                     
                     # if 100*(yk[-1]/((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1])-1) > 10:
@@ -202,7 +213,7 @@ class stockFeature(oneStockDocument):
                 # continue
                 
             if y[-1] > 45:
-                additional += "pe过45，不建议买入"
+                additional += "\n该股pe过45，不建议买入"
                 # continue
             
 
@@ -210,25 +221,44 @@ class stockFeature(oneStockDocument):
             # print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
 
             shuchuxiane = 101
-            if False or (y[-1]-pe_min)/(pe_max-pe_min)*100 < shuchuxiane:
-                
+            guzhi_zhibiao = (y[-1]-pe_min)/(pe_max-pe_min)*100
+            expect_Nianhua = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
+            expect_Jiage = yk[-1] * (1+expect_Nianhua/100)**3
+            lirun_zhibiao = max(shizhi.values())//1e8
+            dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1])-1)
+            if False or \
+                (guzhi_zhibiao < shuchuxiane and expect_Nianhua > 13 and lirun_zhibiao > 1 \
+                and dangqianzhangfu_zhibiao < 50):
+                # print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
+                # continue
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
-                    str(max(shizhi.values())//1e8),'亿利润, 价估:%.2f %%'%((y[-1]-pe_min)/(pe_max-pe_min)*100),\
+                    str(lirun_zhibiao),'亿利润, 价估:%.2f %%'%((y[-1]-pe_min)/(pe_max-pe_min)*100),\
                     "\n当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
                     "\n买入估值参考:",str(pe_min*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n买入价格参考:",str(price_min*jiagetidu*100//1/100),\
                     "\n买入平均参考:",str((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu*100//1/100),\
-                    "\n卖出估值保守:",str(pe_mean*yk[-1]/y[-1]*jiagetidu*100//1/100),\
-                    "\n卖出价格保守:",str(price_max*jiagetidu*100//1/100),\
-                    "\n卖出估值激进:",str(pe_max*yk[-1]/y[-1]*jiagetidu*100//1/100),\
-                    "\n五年平均杜邦ROE %.2f%%"%(np.mean(yROE[-5:])),\
-                    "\n当前PETTM=%.2f,(银行金融为PBTTM), peg:%.2f"%(y[-1],peg), \
+                    # "\n卖出估值保守:",str(pe_mean*yk[-1]/y[-1]*jiagetidu*100//1/100),\
+                    # "\n卖出价格保守:",str(price_max*jiagetidu*100//1/100),\
+                    # "\n卖出估值激进:",str(pe_max*yk[-1]/y[-1]*jiagetidu*100//1/100),\
+                    "\n3年平均杜邦ROE %.2f%%"%(np.mean(yROE[-3:])),\
+                    "\n当前PE(B)TTM=%.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,peg), \
+                    "\n预计利润增长率=%.2f%%~%.2f%%-%.2f%%-%.2f%%"%(100*growth,100*growth0,100*min(0.25, y2g),100*min(0.25, y1g)), \
+                    "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua), \
                     '\n股息率%.2f%%,上次分红日期:%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3]),\
-                    "\n平均建仓参考: %.2f￥, 当前涨幅%.2f%%"%((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1], 100*(yk[-1]/((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1])-1)),\
+                    "\n捡钱价建仓参考: %.2f￥, 当前涨幅%.2f%%"%((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1], dangqianzhangfu_zhibiao),\
                     "\n防御力(越大越好,优质股基准为90%%):%.2f%% %s"%((1 - cor[1][0])*100, additional),\
                     '\n'])
-                stock_list += [((y[-1]-pe_min)/(pe_max-pe_min)*100,100*(yk[-1]/((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1])-1),outstr)]
+                stock_list += [(expect_Nianhua,#收益估计
+                                self.industry_dic[self.document['code']][0],#名字
+                                self.industry_dic[self.document['code']][1],#行业
+                                lirun_zhibiao,#利润
+                                dangqianzhangfu_zhibiao,#涨幅
+                                (1 - cor[1][0])*100,
+                                additional,
+                                expect_Jiage,
+                                yk[-1],
+                                outstr)]#杂项
                 # print(outstr)
             else:
                 continue
@@ -258,6 +288,8 @@ class stockFeature(oneStockDocument):
                 plt.plot(x, [pe_mean for i in range(len(y))])
                 plt.plot(x, [pe_max for i in range(len(y))])
                 plt.plot(x, [pe_min for i in range(len(y))])
+                plt.plot(x, [pe_expect for i in range(len(y))], 'y--')
+                
 
                 # plt.subplot(323)
                 # plt.ylim(np.min(ypcf[-600:]),np.max(ypcf[-600:]))
@@ -282,7 +314,7 @@ class stockFeature(oneStockDocument):
 
                 plt.subplot(326)
                 plt.plot(xshizhi, yshizhi)
-                plt.title('Net Profits Value')
+                plt.title('Net Profits Value, growth = %.2f%%'%(100*(growth)))
                 plt.plot(xshizhi, [min(yshizhi) for i in range(len(yshizhi))])
 
                 # plt.subplot(326)
@@ -300,22 +332,39 @@ class stockFeature(oneStockDocument):
                 plt.subplot(325)
                 plt.plot([i for i in range(kaocha_day)], yk_sub,'r')
                 # plt.plot(xk, yk_vol,'g')
-                plt.title('yk'+ str(kaocha_day))
+                plt.title('yk'+ str(kaocha_day) + 'nianhua=%.2f%%'%(expect_Nianhua))
 
                 plt.show()
         return stock_list
                 
+def industryClassifer(stock_list):
+    stock_list = sorted(stock_list, key=lambda s: s[0], reverse = True)
+    output_stack = {}
+    # stock_list += [(#收益估计0,#名字1,#行业2,#利润3,#涨幅4,#杂项5)]
+    for item in stock_list:
+        try:
+            output_stack[item[2]] += [(item)]
+        except KeyError:
+            output_stack[item[2]] = [(item)]
+    j = 0
+    for key in output_stack.keys():
+        output_stack[key] = sorted(output_stack[key], key=lambda s: s[3], reverse = True)
+        j+=1
+        i = 0
+        print('-------------------------------')
+        for item in output_stack[key]:
+            i += 1
+            print('%2d-%2d'%(j,i) + ' 预计三年年化均收益%.2d%% %+6s %+6s  年利润%.2f亿 预计最大回撤%.2f%%  防御力(越大越好,优质股基准为90%%):%.2f%% %s, 预计3年！！卖出价格%.2f￥, 当前价格%.2f￥'\
+                        %(item[0],item[1],item[2],item[3],item[4],item[5], item[6], item[7], item[8]))
+
 
 if __name__ == '__main__':
-    stock = stockFeature('./data/stock_industry_select630.csv')
+    stock = stockFeature('./data/stock_industry_select727.csv')
     # stock = stockFeature('./data/stock_industry_select_chicang.csv')
     
     stock.setupDateStore()
     stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse()
-    stock_list = sorted(stock_list, key=lambda s: s[1])
+    industryClassifer(stock_list)
     print('================')
-    i = 1
-    for item in stock_list:
-        print(str(i) + ' ' + item[2])
-        i += 1
+    
