@@ -150,7 +150,7 @@ class stockFeature(oneStockDocument):
                 continue
             if self.industry_dic[self.document['code']][1] in \
                     ['化工','计算机','国防军工','机械设备','建筑装饰','有色金属','商业贸易','采掘','钢铁'\
-                    ,'电气设备','综合']:
+                    ,'电气设备','综合','汽车','电子']:
                 continue
 
             print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+str(np.max(yguben)/(1e10)))

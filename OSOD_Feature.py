@@ -134,11 +134,22 @@ class stockFeature(oneStockDocument):
                 count += 1
             yguben = np.array(yguben)
             
-            y2g = (yshizhi[-2]/yshizhi[-3] - 1)
-            y1g = (yshizhi[-1]/yshizhi[-2] - 1)
-            growth0 = (min(0.25, y2g)*0.4 + min(0.25, y1g)*0.6)
-            growth =min(0.18,0.85*growth0 )
-            peg = y[-1] / growth /100
+            if len(yshizhi) < 5:
+                pass
+                
+                y1g = (yshizhi[-1]/yshizhi[-2] - 1)
+                growth0 = min(0.35, y1g)
+                growth =0.8*growth0
+                PEG = y[-1] / growth /100
+                # continue
+            else:
+                y4g = (yshizhi[-4]/yshizhi[-5] - 1)
+                y3g = (yshizhi[-3]/yshizhi[-4] - 1)
+                y2g = (yshizhi[-2]/yshizhi[-3] - 1)
+                y1g = (yshizhi[-1]/yshizhi[-2] - 1)
+                growth0 = min(0.35, y4g)*0.22 +min(0.35, y3g)*0.24 + min(0.35, y2g)*0.26 + min(0.35, y1g)*0.28
+                growth =growth0
+                PEG = y[-1] / growth /100
             
            
             # if len(yshizhi) < 3 or len(yROE) < 3:
@@ -152,15 +163,15 @@ class stockFeature(oneStockDocument):
             # if np.mean(yROE[-5:]) < 12:
             #     continue
 
-            if len(y)<600:
+            if len(y)<1500:
                 pe_max =  min(80,np.max(y[-400:]))
                 pe_mean = min(40,np.mean(y[-400:]))
                 pe_min =  np.min(y[-400:])
             else:
-                pe_max =  min(80,np.max(y[-700:]))
-                pe_mean = min(40,np.mean(y[-700:]))
-                pe_min =  np.min(y[-700:])
-            pe_expect = (0.75*y[-1] + 0.25*pe_mean)
+                pe_max =  min(80,np.max(y[-1600:]))
+                pe_mean = min(40,np.mean(y[-1600:]))
+                pe_min =  max(0,np.min(y[-1600:]))
+            pe_expect = (0.7*y[-1] + 0.3*pe_mean)
             price_max = np.max(yk[-120:])
             price_min = np.min(yk[-120:])
             if self.industry_dic[self.document['code']][1] in ['银行']:
@@ -187,7 +198,7 @@ class stockFeature(oneStockDocument):
             #     print('股息率%.f%%,%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3]),'当前股价:',yk[-1])
 
             
-            kaocha_day = min(900,len(yk))
+            kaocha_day = min(700,len(yk))
             yk_dapan_sub = yk_dapan[-kaocha_day:]
             yk_sub = yk[-kaocha_day:]
             ab = np.array([yk_dapan_sub, yk_sub])
@@ -212,43 +223,53 @@ class stockFeature(oneStockDocument):
                 #     continue
                 # continue
                 
-            if y[-1] > 45:
-                additional += "\n该股pe过45，不建议买入"
-                # continue
+            if y[-1] > 40:
+                additional += "\n该股pe过40，不建议买入"
+                continue
             
 
             #test
             # print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
 
-            shuchuxiane = 101
             guzhi_zhibiao = (y[-1]-pe_min)/(pe_max-pe_min)*100
-            expect_Nianhua = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
-            expect_Jiage = yk[-1] * (1+expect_Nianhua/100)**3
+            guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
+            expect_Nianhua0 = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
+            expect_Nianhua = 100*growth
+            expect_Jiage = yk[-1] * (1+expect_Nianhua0/100)**3
             lirun_zhibiao = max(shizhi.values())//1e8
-            dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1])-1)
+            defence_zhibiao = (1 - cor[1][0])*100
+            PEG=y[-1]/100/growth
+            dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1])-1)
+            guxilv_zhibiao = 100*float(fenhong.values[0][-2])/yk[-1]
             if False or \
-                (guzhi_zhibiao < shuchuxiane and expect_Nianhua > 13 and lirun_zhibiao > 1 \
-                and dangqianzhangfu_zhibiao < 50):
-                # print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
-                # continue
+                (guzhi_zhibiao < guzhi_zhibiao_mean and expect_Nianhua > 10 and lirun_zhibiao > 1 \
+                and dangqianzhangfu_zhibiao < 50 and defence_zhibiao > 95 and PEG < 5):
+
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
                     str(lirun_zhibiao),'亿利润, 价估:%.2f %%'%((y[-1]-pe_min)/(pe_max-pe_min)*100),\
                     "\n当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
                     "\n买入估值参考:",str(pe_min*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n买入价格参考:",str(price_min*jiagetidu*100//1/100),\
-                    "\n买入平均参考:",str((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu*100//1/100),\
+                    "\n买入平均参考:",str((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu*100//1/100),\
                     # "\n卖出估值保守:",str(pe_mean*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     # "\n卖出价格保守:",str(price_max*jiagetidu*100//1/100),\
                     # "\n卖出估值激进:",str(pe_max*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n3年平均杜邦ROE %.2f%%"%(np.mean(yROE[-3:])),\
-                    "\n当前PE(B)TTM=%.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,peg), \
+                    "\n当前PE(B)TTM=%.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,PEG), \
                     "\n预计利润增长率=%.2f%%~%.2f%%-%.2f%%-%.2f%%"%(100*growth,100*growth0,100*min(0.25, y2g),100*min(0.25, y1g)), \
-                    "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua), \
-                    '\n股息率%.2f%%,上次分红日期:%s'%(100*float(fenhong.values[0][-2])/yk[-1], fenhong.values[0][3]),\
-                    "\n捡钱价建仓参考: %.2f￥, 当前涨幅%.2f%%"%((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1], dangqianzhangfu_zhibiao),\
+                    "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua0), \
+                    '\n股息率%.2f%%,上次分红日期:%s'%(guxilv_zhibiao, fenhong.values[0][3]),\
+                    "\n捡钱价建仓参考: %.2f￥, 当前涨幅%.2f%%"%((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1], dangqianzhangfu_zhibiao),\
                     "\n防御力(越大越好,优质股基准为90%%):%.2f%% %s"%((1 - cor[1][0])*100, additional),\
                     '\n'])
+
+                #test
+                # print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
+                # continue
+                if dangqianzhangfu_zhibiao < 10:
+                    outstr += '可以关注买入'
+
                 stock_list += [(expect_Nianhua,#收益估计
                                 self.industry_dic[self.document['code']][0],#名字
                                 self.industry_dic[self.document['code']][1],#行业
@@ -258,12 +279,16 @@ class stockFeature(oneStockDocument):
                                 additional,
                                 expect_Jiage,
                                 yk[-1],
+                                100*float(fenhong.values[0][-2])/yk[-1],
+                                100*growth,
+                                y[-1],
+                                PEG,
                                 outstr)]#杂项
                 # print(outstr)
             else:
                 continue
 
-            if False:
+            if True:
                 print(outstr)
                 plt.figure(1,figsize=(13,7))
                 plt.subplot(321)
@@ -284,7 +309,7 @@ class stockFeature(oneStockDocument):
                 plt.subplot(322)
                 plt.ylim(pe_min-1,pe_max+1)
                 plt.plot(x, y)
-                plt.title('PEorPB_' + 'PEG=' + str(y[-1] / ((yshizhi[-1]/yshizhi[-3])**0.5 - 1)/100)[:5])
+                plt.title('PEorPB_' + 'PEG=' + str(PEG))
                 plt.plot(x, [pe_mean for i in range(len(y))])
                 plt.plot(x, [pe_max for i in range(len(y))])
                 plt.plot(x, [pe_min for i in range(len(y))])
@@ -332,7 +357,7 @@ class stockFeature(oneStockDocument):
                 plt.subplot(325)
                 plt.plot([i for i in range(kaocha_day)], yk_sub,'r')
                 # plt.plot(xk, yk_vol,'g')
-                plt.title('yk'+ str(kaocha_day) + 'nianhua=%.2f%%'%(expect_Nianhua))
+                plt.title('yk'+ str(kaocha_day) + 'nianhua=%.2f%%'%(expect_Nianhua0))
 
                 plt.show()
         return stock_list
@@ -347,24 +372,31 @@ def industryClassifer(stock_list):
         except KeyError:
             output_stack[item[2]] = [(item)]
     j = 0
+    i = 0
     for key in output_stack.keys():
         output_stack[key] = sorted(output_stack[key], key=lambda s: s[3], reverse = True)
         j+=1
-        i = 0
+        # i = 0
         print('-------------------------------')
         for item in output_stack[key]:
             i += 1
-            print('%2d-%2d'%(j,i) + ' 预计三年年化均收益%.2d%% %+6s %+6s  年利润%.2f亿 预计最大回撤%.2f%%  防御力(越大越好,优质股基准为90%%):%.2f%% %s, 预计3年！！卖出价格%.2f￥, 当前价格%.2f￥'\
-                        %(item[0],item[1],item[2],item[3],item[4],item[5], item[6], item[7], item[8]))
-
+            try:
+                print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 卖价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f'\
+                            %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[7], item[9], item[11], item[12]))
+                # print('%2d-%2d'%(j,i) + "%s,建仓价格:%s,-5%%=%.2f￥,-10%%=%.2f￥,建仓日期%s"%(item[1],item[8],0.95*item[8],0.9*item[8],datetime.now().strftime("%Y-%m-%d")))
+                print(item[-1])
+                print(' ')
+            except:
+                pass
 
 if __name__ == '__main__':
     stock = stockFeature('./data/stock_industry_select727.csv')
     # stock = stockFeature('./data/stock_industry_select_chicang.csv')
     
-    stock.setupDateStore()
-    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    # stock.setupDateStore()
+    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse()
     industryClassifer(stock_list)
     print('================')
+    # https://www.touzid.com/indice/fundamental.html#/sh000300
     

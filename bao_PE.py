@@ -79,4 +79,4 @@ def get_bao_PE_byCode(code, sltDateBegin, sltDateEnd):
 if __name__ == "__main__":
     
     # get_bao_PE()
-    get_bao_PE_byCode('sz.300758', '2007-01-01', '2019-04-30')
+    get_bao_PE_byCode('sh.000300', '2007-01-01', '2019-04-30')
