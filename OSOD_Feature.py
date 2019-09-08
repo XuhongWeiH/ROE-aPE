@@ -233,6 +233,7 @@ class stockFeature(oneStockDocument):
 
             guzhi_zhibiao = (y[-1]-pe_min)/(pe_max-pe_min)*100
             guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
+            # guzhi_zhibiao_mean = 101#不注释则打开价值因子投资开关
             expect_Nianhua0 = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
             expect_Nianhua = 100*growth
             expect_Jiage = yk[-1] * (1+expect_Nianhua0/100)**3
@@ -243,7 +244,7 @@ class stockFeature(oneStockDocument):
             guxilv_zhibiao = 100*float(fenhong.values[0][-2])/yk[-1]
             if False or \
                 (guzhi_zhibiao < guzhi_zhibiao_mean and expect_Nianhua > 10 and lirun_zhibiao > 1 \
-                and dangqianzhangfu_zhibiao < 50 and defence_zhibiao > 95 and PEG < 5):
+                and dangqianzhangfu_zhibiao < 40 and defence_zhibiao > 95 and PEG < 5):
 
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
@@ -288,7 +289,7 @@ class stockFeature(oneStockDocument):
             else:
                 continue
 
-            if True:
+            if False:
                 print(outstr)
                 plt.figure(1,figsize=(13,7))
                 plt.subplot(321)
@@ -384,7 +385,7 @@ def industryClassifer(stock_list):
                 print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 卖价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f'\
                             %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[7], item[9], item[11], item[12]))
                 # print('%2d-%2d'%(j,i) + "%s,建仓价格:%s,-5%%=%.2f￥,-10%%=%.2f￥,建仓日期%s"%(item[1],item[8],0.95*item[8],0.9*item[8],datetime.now().strftime("%Y-%m-%d")))
-                print(item[-1])
+                # print(item[-1])
                 print(' ')
             except:
                 pass
