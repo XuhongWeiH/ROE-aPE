@@ -12,6 +12,7 @@ from bao_profit import computeProfit
 import baostock as bs
 
 
+
 class oneStockDocument():
 
     def __init__(self, industry_root):
@@ -135,7 +136,7 @@ class oneStockDocument():
 
     def readPEPBPCF(self):
         df_origin_PE = get_bao_PE_byCode(
-            code=self.code, sltDateBegin='2008-01-01', sltDateEnd='2019-04-30')
+            code=self.code, sltDateBegin='2007-01-01', sltDateEnd='2012-01-01')
         df = df_origin_PE[['date', 'code', 'peTTM', 'pbMRQ','pcfNcfTTM']]
 
         for item in df.values:
@@ -149,7 +150,7 @@ class oneStockDocument():
 
     def readK_line(self):
         df_origin_Kline = askPrice_byDate(
-            code=self.code, sltDateBegin='2008-01-01', sltDateEnd='2019-04-30')
+            code=self.code, sltDateBegin='2007-01-01', sltDateEnd='2012-01-01')
         df = df_origin_Kline[["date", "code", "open", "high", "low", "close","volume","amount"]]
 
         for item in df.values:
@@ -179,7 +180,7 @@ class oneStockDocument():
             self.setDocument()
             bs.login()
 
-    def updateStore(self, todayEnd):
+    def updateStore(self, todayEnd, ):
         for code in tqdm(self.industry_dic.keys()):
             assert(os.path.exists('./data_osod/' + code + '.json'))
 
@@ -269,14 +270,21 @@ class oneStockDocument():
             self.PE = self.document['PE']
             self.PCF = self.document['PCF']
             if self.PE == {}:
-                continue
-            df = get_bao_PE_byCode(code=code,\
+                df = get_bao_PE_byCode(code=code,\
+                                   sltDateBegin='2012-01-01', \
+                                   sltDateEnd=todayEnd)
+                if df.values == []:
+                    continue
+            else:
+                df = get_bao_PE_byCode(code=code,\
                                    sltDateBegin=max(self.PE.keys()), \
                                    sltDateEnd=todayEnd)
             df = df[['date', 'code', 'peTTM','pcfNcfTTM']]
 
             for item in df.values:
                 date = item[0]
+                if item[2] == '' or item[3] == '':
+                    continue 
                 self.PE[date] = float(item[2])
                 self.PCF[date] = float(item[3])
 
@@ -285,8 +293,13 @@ class oneStockDocument():
             if self.industry == self.industry_dic[code][1] in ['银行', '非银金融']:
                 self.PB = self.document['PB']
                 if self.PB == {}:
-                    continue
-                df = get_bao_PE_byCode(code=code,\
+                    df = get_bao_PE_byCode(code=code,\
+                                    sltDateBegin='2012-01-01', \
+                                    sltDateEnd=todayEnd)
+                    if df.values == []:
+                        continue
+                else:
+                    df = get_bao_PE_byCode(code=code,\
                                     sltDateBegin=max(self.PB.keys()), \
                                     sltDateEnd=todayEnd)
                 df = df[['date', 'code', 'peTTM', 'pbMRQ']]
@@ -298,7 +311,14 @@ class oneStockDocument():
             self.K_line = self.document['K_line']
             self.volume = self.document['volume']
             self.amount = self.document['amount']
-            df = askPrice_byDate(code=code, \
+            if self.K_line == {}:
+                df = askPrice_byDate(code=code, \
+                                            sltDateBegin='2012-01-01', \
+                                            sltDateEnd=todayEnd)
+                if df.values == []:
+                    continue
+            else:
+                df = askPrice_byDate(code=code, \
                                             sltDateBegin=max(self.K_line.keys()), \
                                             sltDateEnd=todayEnd)
             df = df[["date", "code", "open", "high", "low", "close","volume","amount"]]

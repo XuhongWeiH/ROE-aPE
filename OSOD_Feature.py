@@ -19,12 +19,12 @@ class stockFeature(oneStockDocument):
     def __init__(self, industry_root):
         oneStockDocument.__init__(self, industry_root)
         
-    def peAnalyse(self):
+    def peAnalyse(self, dapan_day):
         industry_dic = self.hangye_list()
         K_Dapan = {}
         xiangguandu = []
         df_dapan_Kline = askPrice_byDate(
-            code='sh.000001', sltDateBegin='2008-01-01', sltDateEnd=datetime.now().strftime("%Y-%m-%d"))
+            code='sh.000001', sltDateBegin='2008-01-01', sltDateEnd=dapan_day)
         df = df_dapan_Kline[["date", "code", "open", "high", "low", "close","volume","amount"]]
         yk_dapan = []
         for item in df.values:
@@ -226,6 +226,10 @@ class stockFeature(oneStockDocument):
             if y[-1] > 40:
                 additional += "\n该股pe过40，不建议买入"
                 continue
+
+            if self.industry_dic[self.document['code']][1] in ['银行', '非银金融'] and y[-1] >2:
+                additional += "\n该股pb过2，不建议买入"
+                continue
             
 
             #test
@@ -233,18 +237,26 @@ class stockFeature(oneStockDocument):
 
             guzhi_zhibiao = (y[-1]-pe_min)/(pe_max-pe_min)*100
             guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
-            # guzhi_zhibiao_mean = 101#不注释则打开价值因子投资开关
+            dangqianzhangfu_zhibiao_lim = 10
+            defence_zhibiao_lim = 95
+            expect_Nianhua_lim = 14
+            guzhi_zhibiao_mean = 101#不注释则打开价值因子投资开关
+            dangqianzhangfu_zhibiao_lim = 50#不注释则打开价值因子投资开关
+            defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
+            expect_Nianhua_lim = 14#不注释则打开价值因子投资开关
             expect_Nianhua0 = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
             expect_Nianhua = 100*growth
             expect_Jiage = yk[-1] * (1+expect_Nianhua0/100)**3
             lirun_zhibiao = max(shizhi.values())//1e8
             defence_zhibiao = (1 - cor[1][0])*100
             PEG=y[-1]/100/growth
-            dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1])-1)
+            if self.industry_dic[self.document['code']][1] in ['银行', '非银金融']:
+                PEG = 0.8
+            dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min*0.55+0.45*pe_min*yk[-1]/y[-1])*jiagetidu[-1])-1)
             guxilv_zhibiao = 100*float(fenhong.values[0][-2])/yk[-1]
             if False or \
-                (guzhi_zhibiao < guzhi_zhibiao_mean and expect_Nianhua > 10 and lirun_zhibiao > 1 \
-                and dangqianzhangfu_zhibiao < 40 and defence_zhibiao > 95 and PEG < 5):
+                (guzhi_zhibiao < guzhi_zhibiao_mean and expect_Nianhua > expect_Nianhua_lim and lirun_zhibiao > 1 \
+                and dangqianzhangfu_zhibiao < dangqianzhangfu_zhibiao_lim and defence_zhibiao > defence_zhibiao_lim and PEG < 1.5):
 
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
@@ -261,7 +273,7 @@ class stockFeature(oneStockDocument):
                     "\n预计利润增长率=%.2f%%~%.2f%%-%.2f%%-%.2f%%"%(100*growth,100*growth0,100*min(0.25, y2g),100*min(0.25, y1g)), \
                     "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua0), \
                     '\n股息率%.2f%%,上次分红日期:%s'%(guxilv_zhibiao, fenhong.values[0][3]),\
-                    "\n捡钱价建仓参考: %.2f￥, 当前涨幅%.2f%%"%((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1], dangqianzhangfu_zhibiao),\
+                    "\n捡钱价建仓参考: %.2f￥, 当前涨幅%.2f%%"%((price_min*0.55+0.45*pe_min*yk[-1]/y[-1])*jiagetidu[-1], dangqianzhangfu_zhibiao),\
                     "\n防御力(越大越好,优质股基准为90%%):%.2f%% %s"%((1 - cor[1][0])*100, additional),\
                     '\n'])
 
@@ -374,6 +386,7 @@ def industryClassifer(stock_list):
             output_stack[item[2]] = [(item)]
     j = 0
     i = 0
+    print("房地产\"利\"需要大于100亿")
     for key in output_stack.keys():
         output_stack[key] = sorted(output_stack[key], key=lambda s: s[3], reverse = True)
         j+=1
@@ -382,21 +395,25 @@ def industryClassifer(stock_list):
         for item in output_stack[key]:
             i += 1
             try:
-                print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 卖价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f'\
-                            %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[7], item[9], item[11], item[12]))
+                print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f'\
+                            %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[9], item[11], item[12]))
                 # print('%2d-%2d'%(j,i) + "%s,建仓价格:%s,-5%%=%.2f￥,-10%%=%.2f￥,建仓日期%s"%(item[1],item[8],0.95*item[8],0.9*item[8],datetime.now().strftime("%Y-%m-%d")))
                 # print(item[-1])
-                print(' ')
+                # print(' ')
             except:
                 pass
 
 if __name__ == '__main__':
-    stock = stockFeature('./data/stock_industry_select727.csv')
-    # stock = stockFeature('./data/stock_industry_select_chicang.csv')
+    stock = stockFeature('./data/stock_industry_select915.csv')
     
+    stock.setupDateStore()
+    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    stock_list = stock.peAnalyse(datetime.now().strftime("%Y-%m-%d"))
+
+    # date = '2019-09-25'
     # stock.setupDateStore()
-    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
-    stock_list = stock.peAnalyse()
+    # stock.updateStore(date)
+    # stock_list = stock.peAnalyse(date)
     industryClassifer(stock_list)
     print('================')
     # https://www.touzid.com/indice/fundamental.html#/sh000300
