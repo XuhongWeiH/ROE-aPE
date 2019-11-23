@@ -26,8 +26,10 @@ class stockFeature(oneStockDocument):
 
             with open('./data_osod/' + code + '.json', 'r') as f:
                 self.document = json.load(fp=f)
-            # if self.industry_dic[self.document['code']][0] in ['白云山']:
+            # if self.industry_dic[self.document['code']][0] in ['洽洽食品']:
             #     print(1)
+            # else:
+            #     continue
             if self.industry_dic[self.document['code']][1] in ['银行', '非银金融']:
                 pb = self.document['PB']
                 y = []
@@ -69,16 +71,16 @@ class stockFeature(oneStockDocument):
             
             if len(yshizhi) < 3 or len(yROE) < 3:
                 continue
-            if len(y) < 700:
+            if len(y) < 600:
                 continue
-            if shizhi == {} or max(shizhi.values()) < 1e8:
+            if shizhi == {} or max(shizhi.values()) < 5e7:
                 continue
             # if max(guben.values())< 0*1e8:
             #     continue
-            if yshizhi[-1] < yshizhi[-3]:
-                continue
+            # if yshizhi[-1] < yshizhi[-3]:
+            #     continue
             
-            if np.mean(yROE[-3:]) < 15:
+            if np.mean(yROE[-4:]) < 14:
                 continue
             if self.industry_dic[self.document['code']][1] in \
                     ['化工','计算机','国防军工','机械设备','建筑装饰','有色金属','商业贸易','采掘','钢铁'\
