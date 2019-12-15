@@ -250,7 +250,7 @@ class stockFeature(oneStockDocument):
             PEG=y[-1]/100/growth
             if self.industry_dic[self.document['code']][1] in ['银行', '非银金融']:
                 PEG = 0.8
-            dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min*0.55+0.45*pe_min*yk[-1]/y[-1])*jiagetidu[-1])-1)
+            dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1])-1)
             guxilv_zhibiao = 100*float(fenhong.values[0][-2])/yk[-1]
             if False or \
                 (guzhi_zhibiao < guzhi_zhibiao_mean and expect_Nianhua > expect_Nianhua_lim and lirun_zhibiao > 1 \
@@ -259,7 +259,7 @@ class stockFeature(oneStockDocument):
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
                     str(lirun_zhibiao),'亿利润, 价估:%.2f %%'%((y[-1]-pe_min)/(pe_max-pe_min)*100),\
-                    "\n当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
+                    "   当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
                     "\n买入估值参考:",str(pe_min*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n买入价格参考:",str(price_min*jiagetidu*100//1/100),\
                     "\n买入平均参考:",str((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu*100//1/100),\
@@ -268,13 +268,15 @@ class stockFeature(oneStockDocument):
                     # "\n卖出估值激进:",str(pe_max*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n3年平均杜邦ROE %.2f%%"%(np.mean(yROE[-3:])),\
                     "\n当前PE(B)TTM=%.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,PEG), \
-                    "\n预计利润增长率=%.2f%%~%.2f%%-%.2f%%-%.2f%%"%(100*growth,100*growth0,100*min(0.25, y2g),100*min(0.25, y1g)), \
-                    "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua0), \
+                    # "\n预计利润增长率=%.2f%%~%.2f%%-%.2f%%-%.2f%%"%(100*growth,100*growth0,100*min(0.25, y2g),100*min(0.25, y1g)), \
+                    # "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua0), \
                     '\n股息率%.2f%%,上次分红日期:%s'%(guxilv_zhibiao, fenhong.values[0][3]),\
-                    "\n-7.5%%捡钱价建仓参考: %.2f￥,捡钱价建仓参考: %.2f￥,+7.5%%捡钱价建仓参考: %.2f￥, 当前涨幅%.2f%%"%(\
-                                                (price_min*0.55+0.45*pe_min*yk[-1]/y[-1])*jiagetidu[-1]*0.925,\
-                                                (price_min*0.55+0.45*pe_min*yk[-1]/y[-1])*jiagetidu[-1],\
-                                                (price_min*0.55+0.45*pe_min*yk[-1]/y[-1])*jiagetidu[-1]*1.075, \
+                    "\n-6%%捡建:%.2f￥,-3%%捡建:%.2f￥,0%%捡建:%.2f￥,+3%%捡建:%.2f￥,+7.5%%捡建:%.2f￥, 当前涨幅%.2f%%"%(\
+                                                (price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1]*0.94,\
+                                                (price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1]*0.97,\
+                                                (price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1],\
+                                                (price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1]*1.03,\
+                                                (price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1]*1.075, \
                                                 dangqianzhangfu_zhibiao),\
                     "\n防御力(越大越好,优质股基准为90%%):%.2f%% %s"%((1 - cor[1][0])*100, additional),\
                     '\n'])
@@ -390,6 +392,7 @@ def industryClassifer(stock_list):
     j = 0
     i = 0
     print("房地产\"利\"需要大于100亿")
+    print("沪深300 pe12:1%,pe11.75:+1.5%,pe11.5:+1.5%,pe11.2:+1%")
     for key in output_stack.keys():
         output_stack[key] = sorted(output_stack[key], key=lambda s: s[3], reverse = True)
         j+=1
@@ -397,8 +400,10 @@ def industryClassifer(stock_list):
         print('-------------------------------')
         for item in output_stack[key]:
             i += 1
-            if i > 5:
+            if i > 20:
                 continue
+            if i > 10:
+                continue#不注释则打开价值因子投资开关
             try:
                 print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f m_ROE=%.2f%%'\
                             %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[9], item[11], item[12], item[13]))
