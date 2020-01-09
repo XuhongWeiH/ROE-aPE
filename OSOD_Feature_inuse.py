@@ -223,8 +223,8 @@ class stockFeature(oneStockDocument):
                 #     continue
                 # continue
                 
-            # if y[-1] > 40:
-            #     additional += "\n该股pe过40，不建议买入"
+            if y[-1] > 35:
+                additional += "\n该股pe过40，不建议买入"
             #     # continue
             # if self.industry_dic[self.document['code']][1] in ['银行', '非银金融'] and y[-1] >2:
             #     additional += "\n该股pb过2，不建议买入"
@@ -235,13 +235,14 @@ class stockFeature(oneStockDocument):
 
             guzhi_zhibiao = (y[-1]-pe_min)/(pe_max-pe_min)*100
             guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
-            dangqianzhangfu_zhibiao_lim = 20
+            guzhi_zhibia_lim = 30
+            dangqianzhangfu_zhibiao_lim = 15
             defence_zhibiao_lim = 0
             expect_Nianhua_lim = 0
-            guzhi_zhibiao_mean = 101#不注释则打开价值因子投资开关
-            dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
-            defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
-            expect_Nianhua_lim = 0#不注释则打开价值因子投资开关
+            # guzhi_zhibiao_mean = 101#不注释则打开价值因子投资开关
+            # dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
+            # defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
+            # expect_Nianhua_lim = 0#不注释则打开价值因子投资开关
             expect_Nianhua0 = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
             expect_Nianhua = 100*growth
             expect_Jiage = yk[-1] * (1+expect_Nianhua0/100)**3
@@ -253,12 +254,12 @@ class stockFeature(oneStockDocument):
             dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1])-1)
             guxilv_zhibiao = 100*float(fenhong.values[0][-2])/yk[-1]
             if False or \
-                (guzhi_zhibiao < guzhi_zhibiao_mean and expect_Nianhua > expect_Nianhua_lim and lirun_zhibiao > 1 \
+                (guzhi_zhibiao < guzhi_zhibiao_mean and guzhi_zhibiao <guzhi_zhibia_lim and expect_Nianhua > expect_Nianhua_lim and lirun_zhibiao > 1 \
                 and dangqianzhangfu_zhibiao < dangqianzhangfu_zhibiao_lim and defence_zhibiao > defence_zhibiao_lim and PEG < 5.5):
 
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
-                    str(lirun_zhibiao),'亿利润, 价估:%.2f %%'%((y[-1]-pe_min)/(pe_max-pe_min)*100),\
+                    str(lirun_zhibiao),'亿利润, 估值区间:%.2f %%'%((y[-1]-pe_min)/(pe_max-pe_min)*100),\
                     "   当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
                     "\n买入估值参考:",str(pe_min*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n买入价格参考:",str(price_min*jiagetidu*100//1/100),\
@@ -266,7 +267,7 @@ class stockFeature(oneStockDocument):
                     # "\n卖出估值保守:",str(pe_mean*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     # "\n卖出价格保守:",str(price_max*jiagetidu*100//1/100),\
                     # "\n卖出估值激进:",str(pe_max*yk[-1]/y[-1]*jiagetidu*100//1/100),\
-                    "\n3年平均杜邦ROE %.2f%%"%(np.mean(yROE[-3:])),\
+                    "\n4年平均杜邦ROE %.2f%%"%(np.mean(yROE[-4:])),\
                     "\n当前PE(B)TTM=%.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,PEG), \
                     # "\n预计利润增长率=%.2f%%~%.2f%%-%.2f%%-%.2f%%"%(100*growth,100*growth0,100*min(0.25, y2g),100*min(0.25, y1g)), \
                     # "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua0), \
@@ -402,8 +403,8 @@ def industryClassifer(stock_list):
             i += 1
             if i > 20:
                 continue
-            if i > 10:
-                continue#不注释则打开价值因子投资开关
+            # if i > 10:
+            #     continue#不注释则打开价值因子投资开关
             try:
                 print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f m_ROE=%.2f%%'\
                             %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[9], item[11], item[12], item[13]))
@@ -415,7 +416,8 @@ def industryClassifer(stock_list):
 
 if __name__ == '__main__':
     # stock = stockFeature('./data/stock_industry_select727.csv')
-    stock = stockFeature('./data/stock_industry_select915.csv')
+    # stock = stockFeature('./data/stock_industry_select915.csv')
+    stock = stockFeature('./data/stock_industry_select1230.csv')
     
     # stock.setupDateStore()
     # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
