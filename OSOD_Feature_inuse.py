@@ -170,7 +170,7 @@ class stockFeature(oneStockDocument):
             else:
                 pe_max =  min(80,np.max(y[-1600:]))
                 pe_mean = min(40,np.mean(y[-1600:]))
-                pe_min =  max(0,np.min(y[-1600:]))
+                pe_min =  max(0.01,np.min(y[-1600:]))
             pe_expect = (0.7*y[-1] + 0.3*pe_mean)
             price_max = np.max(yk[-120:])
             price_min = np.min(yk[-120:])
@@ -205,26 +205,9 @@ class stockFeature(oneStockDocument):
             cor = np.corrcoef(ab)
             xiangguandu += [cor[1][0]]
             additional = ''
-            if cor[1][0] > 0.1 :
-                if (np.mean(yROE[-5:]) < 15 or (y[-1]-pe_min)/(pe_max-pe_min)*100//1 > 15):
-                    pass
-                    # continue
-                else:
-                    pass
-                    # additional = '\n股价随大盘波动较大'
-                    # continue#
-                    
-                    # if 100*(yk[-1]/((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1])-1) > 10:
-                    #     continue
-                    
-            else:
-                pass
-                # if 100*(yk[-1]/((price_min+pe_min*yk[-1]/y[-1])/2*jiagetidu[-1])-1) > 15:
-                #     continue
-                # continue
                 
             if y[-1] > 35:
-                additional += "\n该股pe过40，不建议买入"
+                additional += "\n该股pe过35，不建议买入"
             #     # continue
             # if self.industry_dic[self.document['code']][1] in ['银行', '非银金融'] and y[-1] >2:
             #     additional += "\n该股pb过2，不建议买入"
@@ -233,16 +216,17 @@ class stockFeature(oneStockDocument):
             #test
             # print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
 
-            guzhi_zhibiao = (y[-1]-pe_min)/(pe_max-pe_min)*100
+            guzhi_zhibiao = (y[-1]/pe_min - 1)*100
             guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
             guzhi_zhibia_lim = 30
             dangqianzhangfu_zhibiao_lim = 15
             defence_zhibiao_lim = 0
             expect_Nianhua_lim = 0
-            # guzhi_zhibiao_mean = 101#不注释则打开价值因子投资开关
-            # dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
-            # defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
-            # expect_Nianhua_lim = 0#不注释则打开价值因子投资开关
+            guzhi_zhibiao_mean = 10#不注释则打开价值因子投资开关
+            guzhi_zhibia_lim = 100#不注释则打开价值因子投资开关
+            dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
+            defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
+            expect_Nianhua_lim = 0#不注释则打开价值因子投资开关
             expect_Nianhua0 = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
             expect_Nianhua = 100*growth
             expect_Jiage = yk[-1] * (1+expect_Nianhua0/100)**3
@@ -259,8 +243,10 @@ class stockFeature(oneStockDocument):
 
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
-                    str(lirun_zhibiao),'亿利润, 估值区间:%.2f %%'%((y[-1]-pe_min)/(pe_max-pe_min)*100),\
+                    str(lirun_zhibiao),'亿利润, 估值较最低上涨:%.2f %%'%((y[-1]/pe_min - 1)*100),\
                     "   当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
+                    "\n当前PE(B)TTM = %.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,PEG), \
+                    "\n估值上下界限:",str([pe_min*100//1/100,pe_mean*100//1/100,pe_max*100//1/100]),\
                     "\n买入估值参考:",str(pe_min*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n买入价格参考:",str(price_min*jiagetidu*100//1/100),\
                     "\n买入平均参考:",str((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu*100//1/100),\
@@ -268,7 +254,6 @@ class stockFeature(oneStockDocument):
                     # "\n卖出价格保守:",str(price_max*jiagetidu*100//1/100),\
                     # "\n卖出估值激进:",str(pe_max*yk[-1]/y[-1]*jiagetidu*100//1/100),\
                     "\n4年平均杜邦ROE %.2f%%"%(np.mean(yROE[-4:])),\
-                    "\n当前PE(B)TTM=%.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,PEG), \
                     # "\n预计利润增长率=%.2f%%~%.2f%%-%.2f%%-%.2f%%"%(100*growth,100*growth0,100*min(0.25, y2g),100*min(0.25, y1g)), \
                     # "\n现在买入预计年化收益=%.2f%%"%(expect_Nianhua0), \
                     '\n股息率%.2f%%,上次分红日期:%s'%(guxilv_zhibiao, fenhong.values[0][3]),\
