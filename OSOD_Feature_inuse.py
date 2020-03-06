@@ -137,11 +137,17 @@ class stockFeature(oneStockDocument):
             if len(yshizhi) < 5:
                 pass
                 
-                y1g = (yshizhi[-1]/yshizhi[-2] - 1)
+                try:
+                    y1g = (yshizhi[-1]/yshizhi[-2] - 1)
+                except IndexError:
+                    y1g = 0.16
+
                 growth0 = min(0.35, y1g)
                 growth =0.8*growth0
-                PEG = y[-1] / growth /100
-                # continue
+                try:
+                    PEG = y[-1] / growth /100
+                except IndexError:
+                    continue
             else:
                 y4g = (yshizhi[-4]/yshizhi[-5] - 1)
                 y3g = (yshizhi[-3]/yshizhi[-4] - 1)
@@ -217,12 +223,13 @@ class stockFeature(oneStockDocument):
             # print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
 
             guzhi_zhibiao = (y[-1]/pe_min - 1)*100
-            guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
+            # guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
+            guzhi_zhibiao_mean = 10
             guzhi_zhibia_lim = 30
             dangqianzhangfu_zhibiao_lim = 15
             defence_zhibiao_lim = 0
             expect_Nianhua_lim = 0
-            guzhi_zhibiao_mean = 10#不注释则打开价值因子投资开关
+            guzhi_zhibiao_mean = 40#不注释则打开价值因子投资开关
             guzhi_zhibia_lim = 100#不注释则打开价值因子投资开关
             dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
             defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
@@ -243,7 +250,7 @@ class stockFeature(oneStockDocument):
 
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
-                    str(lirun_zhibiao),'亿利润, 估值较最低上涨:%.2f %%'%((y[-1]/pe_min - 1)*100),\
+                    str(lirun_zhibiao),'亿利润, 估值较最低上涨:%.2f %%'%(guzhi_zhibiao),\
                     "   当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
                     "\n当前PE(B)TTM = %.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,PEG), \
                     "\n估值上下界限:",str([pe_min*100//1/100,pe_mean*100//1/100,pe_max*100//1/100]),\
@@ -402,10 +409,10 @@ def industryClassifer(stock_list):
 if __name__ == '__main__':
     # stock = stockFeature('./data/stock_industry_select727.csv')
     # stock = stockFeature('./data/stock_industry_select915.csv')
-    stock = stockFeature('./data/stock_industry_select1230.csv')
+    stock = stockFeature('./data/stock_industry_select20200306.csv')
     
     # stock.setupDateStore()
-    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse(datetime.now().strftime("%Y-%m-%d"))
     industryClassifer(stock_list)
     print('================')

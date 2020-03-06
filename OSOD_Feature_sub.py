@@ -26,7 +26,7 @@ class stockFeature(oneStockDocument):
 
             with open('./data_osod/' + code + '.json', 'r') as f:
                 self.document = json.load(fp=f)
-            # if self.industry_dic[self.document['code']][0] in ['洽洽食品']:
+            # if self.industry_dic[self.document['code']][0] in ['大博医疗']:
             #     print(1)
             # else:
             #     continue
@@ -69,12 +69,12 @@ class stockFeature(oneStockDocument):
                         yguben+= [float(guben[item])*100]
             yguben = np.array(yguben)
             
-            if len(yshizhi) < 3 or len(yROE) < 3:
-                continue
-            if len(y) < 600:
-                continue
-            if shizhi == {} or max(shizhi.values()) < 5e7:
-                continue
+            # if len(yshizhi) < 3 or len(yROE) < 3:
+            #     continue
+            # if len(y) < 600:
+            #     continue
+            # if shizhi == {} or max(shizhi.values()) < 5e7:
+            #     continue
             # if max(guben.values())< 0*1e8:
             #     continue
             # if yshizhi[-1] < yshizhi[-3]:
@@ -87,6 +87,13 @@ class stockFeature(oneStockDocument):
                     ,'电气设备','综合','汽车','电子','建筑材料','轻工制造','纺织服装','交通运输','公用事业','传媒','通信'\
                     ,'房地产','银行']:
                 continue
+            if '证券' in self.industry_dic[self.document['code']][0]:
+                continue
+            if '小天鹅A' in self.industry_dic[self.document['code']][0]:
+                continue
+            if '租赁' in self.industry_dic[self.document['code']][0]:
+                continue
+                
 
             print(code+','+self.industry_dic[self.document['code']][0]+','+self.industry_dic[self.document['code']][1]+','+'申万一级行业')
             continue
@@ -96,7 +103,7 @@ class stockFeature(oneStockDocument):
 
 if __name__ == '__main__':
     stock = stockFeature('./data/stock_industry.csv')
-    
+    #用于初筛股票
     # stock.setupDateStore()
     # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     # stock.updateStore(datetime.now().strftime("2011-03-06"))
