@@ -174,12 +174,12 @@ class stockFeature(oneStockDocument):
                 pe_mean = min(40,np.mean(y[-400:]))
                 pe_min =  np.min(y[-400:])
             else:
-                pe_max =  min(80,np.max(y[-1600:]))
-                pe_mean = min(40,np.mean(y[-1600:]))
-                pe_min =  max(0.01,np.min(y[-1600:]))
+                pe_max =  min(80,np.max(y[-1200:]))
+                pe_mean = min(40,np.mean(y[-1200:]))
+                pe_min =  max(1,np.min(y[-1200:]))
             pe_expect = (0.7*y[-1] + 0.3*pe_mean)
-            price_max = np.max(yk[-120:])
-            price_min = np.min(yk[-120:])
+            price_max = np.max(yk[-240:])
+            price_min = np.min(yk[-240:])
             if self.industry_dic[self.document['code']][1] in ['银行']:
                 jiagetidu = np.array([1+0.01*i for i in range(0,3,1)])
             else:
@@ -229,7 +229,7 @@ class stockFeature(oneStockDocument):
             dangqianzhangfu_zhibiao_lim = 15
             defence_zhibiao_lim = 0
             expect_Nianhua_lim = 0
-            guzhi_zhibiao_mean = 40#不注释则打开价值因子投资开关
+            guzhi_zhibiao_mean = 300#不注释则打开价值因子投资开关
             guzhi_zhibia_lim = 100#不注释则打开价值因子投资开关
             dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
             defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
@@ -250,8 +250,8 @@ class stockFeature(oneStockDocument):
 
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
-                    str(lirun_zhibiao),'亿利润, 估值较最低上涨:%.2f %%'%(guzhi_zhibiao),\
-                    "   当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
+                    str(lirun_zhibiao),'亿利润, 估值较最低上涨:%.2f %%'%(guzhi_zhibiao),"综合价格涨幅%.2f %%"%(dangqianzhangfu_zhibiao),\
+                    "  当前价格<%s:%.2f元>,"%(max(kline.keys()),yk[-1]),\
                     "\n当前PE(B)TTM = %.2f,预计PE(B)=%.2f, peg:%.2f"%(y[-1],0.8*pe_max,PEG), \
                     "\n估值上下界限:",str([pe_min*100//1/100,pe_mean*100//1/100,pe_max*100//1/100]),\
                     "\n买入估值参考:",str(pe_min*yk[-1]/y[-1]*jiagetidu*100//1/100),\
@@ -395,8 +395,8 @@ def industryClassifer(stock_list):
             i += 1
             if i > 20:
                 continue
-            # if i > 10:
-            #     continue#不注释则打开价值因子投资开关
+            if i > 10:
+                continue#不注释则打开价值因子投资开关
             try:
                 print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f m_ROE=%.2f%%'\
                             %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[9], item[11], item[12], item[13]))
@@ -409,10 +409,11 @@ def industryClassifer(stock_list):
 if __name__ == '__main__':
     # stock = stockFeature('./data/stock_industry_select727.csv')
     # stock = stockFeature('./data/stock_industry_select915.csv')
+    # stock = stockFeature('./data/stock_industry_select1230.csv')
     stock = stockFeature('./data/stock_industry_select20200306.csv')
     
     # stock.setupDateStore()
-    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse(datetime.now().strftime("%Y-%m-%d"))
     industryClassifer(stock_list)
     print('================')
