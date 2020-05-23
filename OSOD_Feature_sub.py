@@ -107,5 +107,5 @@ if __name__ == '__main__':
     # stock.setupDateStore()
     # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     # stock.updateStore(datetime.now().strftime("2011-03-06"))
-    stock_list = stock.peAnalyse('2019-05-10')
+    stock_list = stock.peAnalyse('2020-05-20')
 

@@ -224,16 +224,16 @@ class stockFeature(oneStockDocument):
 
             guzhi_zhibiao = (y[-1]/pe_min - 1)*100
             # guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
-            guzhi_zhibiao_mean = 10
-            guzhi_zhibia_lim = 30
-            dangqianzhangfu_zhibiao_lim = 15
-            defence_zhibiao_lim = 0
-            expect_Nianhua_lim = 0
-            guzhi_zhibiao_mean = 300#不注释则打开价值因子投资开关
-            guzhi_zhibia_lim = 100#不注释则打开价值因子投资开关
-            dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
-            defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
-            expect_Nianhua_lim = 0#不注释则打开价值因子投资开关
+            guzhi_zhibiao_mean = 30
+            guzhi_zhibia_lim = 50
+            dangqianzhangfu_zhibiao_lim = 30
+            defence_zhibiao_lim = -100
+            expect_Nianhua_lim = -100
+            # guzhi_zhibiao_mean = 300#不注释则打开价值因子投资开关
+            # guzhi_zhibia_lim = 100#不注释则打开价值因子投资开关
+            # dangqianzhangfu_zhibiao_lim = 100#不注释则打开价值因子投资开关
+            # defence_zhibiao_lim = 0#不注释则打开价值因子投资开关
+            # expect_Nianhua_lim = 0#不注释则打开价值因子投资开关
             expect_Nianhua0 = 100*(( pe_expect/y[-1]*((1+growth)**3))**0.33-1)
             expect_Nianhua = 100*growth
             expect_Jiage = yk[-1] * (1+expect_Nianhua0/100)**3
@@ -407,10 +407,8 @@ def industryClassifer(stock_list):
                 pass
 
 if __name__ == '__main__':
-    # stock = stockFeature('./data/stock_industry_select727.csv')
-    # stock = stockFeature('./data/stock_industry_select915.csv')
-    # stock = stockFeature('./data/stock_industry_select1230.csv')
-    stock = stockFeature('./data/stock_industry_select20200306.csv')
+    
+    stock = stockFeature('./data/stock_industry_select20200520.csv')
     
     # stock.setupDateStore()
     # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
