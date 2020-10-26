@@ -411,7 +411,7 @@ if __name__ == '__main__':
     stock = stockFeature('./data/stock_industry_select20200520.csv')
     
     # stock.setupDateStore()
-    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse(datetime.now().strftime("%Y-%m-%d"))
     industryClassifer(stock_list)
     print('================')

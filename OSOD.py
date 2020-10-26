@@ -264,7 +264,10 @@ class oneStockDocument():
                 df['year']=shizhi_newyear
                 df = df[['code', 'netProfit', 'totalShare','season', 'year']]
                 self.shizhi['-'.join([str(shizhi_newyear), str(shizhi_newSea)])] = float(df.values[0][1])
-                self.guben['-'.join([str(shizhi_newyear), str(shizhi_newSea)])] = float(df.values[0][2])
+                try:
+                    self.guben['-'.join([str(shizhi_newyear), str(shizhi_newSea)])] = float(df.values[0][2])
+                except ValueError:
+                    self.guben['-'.join([str(shizhi_newyear), str(shizhi_newSea)])] = 0
             
             #PE & PCF
             self.PE = self.document['PE']

@@ -84,7 +84,7 @@ class stockFeature(oneStockDocument):
                 continue
             if self.industry_dic[self.document['code']][1] in \
                     ['化工','计算机','国防军工','机械设备','建筑装饰','有色金属','商业贸易','采掘','钢铁'\
-                    ,'电气设备','综合','汽车','电子','建筑材料','轻工制造','纺织服装','交通运输','公用事业','传媒','通信'\
+                    ,'电气设备','综合','汽车','电子','建筑材料','轻工制造','纺织服装','公用事业','传媒','通信'\
                     ,'房地产','银行']:
                 continue
             if '证券' in self.industry_dic[self.document['code']][0]:
