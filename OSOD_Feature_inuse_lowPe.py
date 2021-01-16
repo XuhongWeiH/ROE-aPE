@@ -8,8 +8,10 @@ import matplotlib
 from datetime import datetime, timedelta
 import numpy as np
 from bao_hongli import searchHongli
+from sendEmail import email
 
 plt.style.use('ggplot') 
+
 # font = {'family':'SimHei'} 
 # matplotlib.rc('font',**font) 
 # matplotlib.rcParams['axes.unicode_minus']=False
@@ -38,6 +40,14 @@ class stockFeature(oneStockDocument):
 
             with open('./data_osod/' + code + '.json', 'r') as f:
                 self.document = json.load(fp=f)
+
+            #!测试
+            # if not self.industry_dic[self.document['code']][0] == "东阿阿胶":
+            #     continue
+            # else:
+            #     print(self.industry_dic[self.document['code']][0])
+            #     pass
+            #!测试
 
             if self.industry_dic[self.document['code']][1] in ['银行', '非银金融']:
                 pb = self.document['PB']
@@ -186,9 +196,9 @@ class stockFeature(oneStockDocument):
                 jiagetidu = np.array([1+0.035*i for i in range(0,3,1)])
 
             #过年要改年份
-            fenhong = searchHongli(self.document['code'], 2019)
+            fenhong = searchHongli(self.document['code'], 2020)
             if fenhong.empty:
-                fenhong = searchHongli(self.document['code'], 2018)
+                fenhong = searchHongli(self.document['code'], 2019)
                 if fenhong.empty:
                     # print('抠门公司无分红->')
                     continue
@@ -224,9 +234,9 @@ class stockFeature(oneStockDocument):
 
             guzhi_zhibiao = (y[-1]/pe_min - 1)*100
             # guzhi_zhibiao_mean = (pe_mean-pe_min)/(pe_max-pe_min)*100
-            guzhi_zhibiao_mean = 30
-            guzhi_zhibia_lim = 50
-            dangqianzhangfu_zhibiao_lim = 30
+            guzhi_zhibiao_mean = 80
+            guzhi_zhibia_lim = 100
+            dangqianzhangfu_zhibiao_lim = 300
             defence_zhibiao_lim = -100
             expect_Nianhua_lim = -100
             # guzhi_zhibiao_mean = 300#不注释则打开价值因子投资开关
@@ -244,9 +254,9 @@ class stockFeature(oneStockDocument):
                 PEG = 0.8
             dangqianzhangfu_zhibiao = 100*(yk[-1]/((price_min*0.6+0.4*pe_min*yk[-1]/y[-1])*jiagetidu[-1])-1)
             guxilv_zhibiao = 100*float(fenhong.values[0][-2])/yk[-1]
-            if False or \
+            if True or \
                 (guzhi_zhibiao < guzhi_zhibiao_mean and guzhi_zhibiao <guzhi_zhibia_lim and expect_Nianhua > expect_Nianhua_lim and lirun_zhibiao > 1 \
-                and dangqianzhangfu_zhibiao < dangqianzhangfu_zhibiao_lim and defence_zhibiao > defence_zhibiao_lim and PEG < 5.5):
+                 and defence_zhibiao > defence_zhibiao_lim and PEG < 8.5):
 
                 outstr = ' '.join([self.industry_dic[self.document['code']][0],\
                     self.industry_dic[self.document['code']][1],\
@@ -386,34 +396,40 @@ def industryClassifer(stock_list):
     i = 0
     print("房地产\"利\"需要大于100亿")
     print("沪深300 pe12:1%,pe11.75:+1.5%,pe11.5:+1.5%,pe11.2:+1%")
+    outstr_em = "沪深300 pe12:1%,pe11.75:+1.5%,pe11.5:+1.5%,pe11.2:+1% \n"
     for key in output_stack.keys():
         output_stack[key] = sorted(output_stack[key], key=lambda s: s[3], reverse = True)
         j+=1
         i = 0
         print('-------------------------------')
+        outstr_em += '------------------------------- \n'
         for item in output_stack[key]:
             i += 1
-            if i > 20:
-                continue
-            if i > 10:
-                continue#不注释则打开价值因子投资开关
+            # if i > 20:
+            #     continue
+            # if i > 10:
+            #     continue#不注释则打开价值因子投资开关
             try:
                 print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f m_ROE=%.2f%%'\
                             %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[9], item[11], item[12], item[13]))
                 # print('%2d-%2d'%(j,i) + "%s,建仓价格:%s,-5%%=%.2f￥,-10%%=%.2f￥,建仓日期%s"%(item[1],item[8],0.95*item[8],0.9*item[8],datetime.now().strftime("%Y-%m-%d")))
+                outstr_em += '%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f m_ROE=%.2f%% \n'\
+                            %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[9], item[11], item[12], item[13])
+                outstr_em += (item[-1] + '\n')
                 print(item[-1])
-                # print(' ')
+
             except:
                 pass
+    return outstr_em
 
 if __name__ == '__main__':
     
-    stock = stockFeature('./data/stock_industry_select20200520.csv')
-    
+    stock = stockFeature('./data/stock_industry_select20210111.csv')
+    print('==========低PE=========')
     # stock.setupDateStore()
-    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse(datetime.now().strftime("%Y-%m-%d"))
-    industryClassifer(stock_list)
-    print('================')
+    outstr_em = industryClassifer(stock_list)
+    email('big_weixuhong@qq.com', outstr_em)
     # https://www.touzid.com/indice/fundamental.html#/sh000300
     

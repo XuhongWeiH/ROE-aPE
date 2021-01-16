@@ -186,9 +186,9 @@ class stockFeature(oneStockDocument):
                 jiagetidu = np.array([1+0.035*i for i in range(0,3,1)])
 
             #过年要改年份
-            fenhong = searchHongli(self.document['code'], 2019)
+            fenhong = searchHongli(self.document['code'], 2020)
             if fenhong.empty:
-                fenhong = searchHongli(self.document['code'], 2018)
+                fenhong = searchHongli(self.document['code'], 2019)
                 if fenhong.empty:
                     # print('抠门公司无分红->')
                     continue
@@ -395,8 +395,8 @@ def industryClassifer(stock_list):
             i += 1
             if i > 20:
                 continue
-            if i > 5:
-                continue#不注释则打开价值因子投资开关
+            # if i > 5:
+            #     continue#不注释则打开价值因子投资开关
             try:
                 print('%2d-%2d'%(j,i) + ' 成长%.2d%% %s %s 利%.0f亿 攻%.2f%% 防%.2f%% %s 现价%.2f￥ 股息率%.2f%% pe=%.2f PEG=%.2f m_ROE=%.2f%%'\
                             %(item[0],item[1],item[2],item[3],100 - item[4],item[5], item[6], item[8], item[9], item[11], item[12], item[13]))
@@ -414,6 +414,6 @@ if __name__ == '__main__':
     # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     stock_list = stock.peAnalyse(datetime.now().strftime("%Y-%m-%d"))
     industryClassifer(stock_list)
-    print('================')
+    print('==========价值因子==========')
     # https://www.touzid.com/indice/fundamental.html#/sh000300
     

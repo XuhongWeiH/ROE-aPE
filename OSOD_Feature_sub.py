@@ -105,7 +105,7 @@ if __name__ == '__main__':
     stock = stockFeature('./data/stock_industry.csv')
     #用于初筛股票
     # stock.setupDateStore()
-    # stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
+    stock.updateStore(datetime.now().strftime("%Y-%m-%d"))
     # stock.updateStore(datetime.now().strftime("2011-03-06"))
     stock_list = stock.peAnalyse('2020-05-20')
 
